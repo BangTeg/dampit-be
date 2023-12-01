@@ -1,0 +1,16 @@
+- src/
+    - controllers/
+    - routes/
+    - utils/
+    - middleware/
+- db/
+    - models/
+    - migrations/
+    - seeders/
+    - config.js
+
+        -
+- .env
+- app.js
+- app.yaml
+- README.md
