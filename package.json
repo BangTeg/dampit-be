@@ -13,7 +13,14 @@
     "type": "git",
     "url": "git+https://github.com/BangTeg/dampit-be.git"
   },
-  "keywords": ["transaction", "rental", "ecommerce", "gcp", "backend", "javascript"],
+  "keywords": [
+    "transaction",
+    "rental",
+    "ecommerce",
+    "gcp",
+    "backend",
+    "javascript"
+  ],
   "author": "Tegar D. Lokananta",
   "license": "ISC",
   "bugs": {

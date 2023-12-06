@@ -20,9 +20,12 @@ module.exports = {
     "host": DB_HOST,
     "port": DB_PORT,
     "dialect": DB_DIALECT,
-    "dialectOptions": {
-      "connectTimeout": 60000 // Set the connection timeout to 60 seconds (optional).
-    }
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    },
   },
   "test": {
     "username": DB_USERNAME,
@@ -31,9 +34,12 @@ module.exports = {
     "host": DB_HOST,
     "port": DB_PORT,
     "dialect": DB_DIALECT,
-    "dialectOptions": {
-      "connectTimeout": 60000 // Set the connection timeout to 60 seconds (optional).
-    }
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    },
   },
   "production": {
     "username": DB_USERNAME,
@@ -42,8 +48,11 @@ module.exports = {
     "host": DB_HOST,
     "port": DB_PORT,
     "dialect": DB_DIALECT,
-    "dialectOptions": {
-      "connectTimeout": 60000 // Set the connection timeout to 60 seconds (optional).
-    }
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    },
   }
 };

@@ -1,16 +1,19 @@
+- db/
+    - migrations/
+    - models/
+        - index.js
+        - reservations.js
+        - users.js
+        - vehicles.js
+    - seeders/
+    - dbconfig.js
 - src/
     - controllers/
+    - middleware/
     - routes/
     - utils/
-    - middleware/
-- db/
-    - models/
-    - migrations/
-    - seeders/
-    - config.js
-
-        -
 - .env
+- .sequelizerc
 - app.js
 - app.yaml
 - README.md
