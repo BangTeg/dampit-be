@@ -1,3 +1,13 @@
-/node_modules
+# Installed Node.js packages
+node_modules
 
+# NPM Package
+package-lock.json
+
+# dotenv environment variables file
 .env
+
+# vscode Local History extension
+.history
+
+projectStructure.txt
