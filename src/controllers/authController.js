@@ -1,28 +1,105 @@
 require(dotenv).config()
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const { body, validationResult } = require('express-validator');
-const { User } = require('../../db/models');
+const { FE_PORT } = process.env;
 
-const { Op } = require('sequelize');
-const { verifyToken } = require('../middleware/authentication');
-const { sendEmail } = require('../utils/sendEmail');
-const { googleOAuth } = require('../config/googleOAuth');
+const { Users } = require('../../db/models');
+const userController = require('./userController');
+
+const { sendAuthEmail, verifyAndInvalidateLastToken} = require('../utils/emailer');
+const { handleError } = require('../middleware/errorHandler');
+const { body, validationResult } = require('express-validator');
 const { crudControllers } = require('../utils/crud');
 
-const {
-  sendAuthEmail,
-  verifyAndInvalidateLastToken,
-} = require('../utils/emailer');
+const fs = require('fs');
+const ejs = require('ejs');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+
+// Generate JWT token
+const generateAuthToken = (user) => {
+  const { id, firstName, lastName, email, role } = user;
+  // console.log(user);
+  return jwt.sign({ id, firstName, lastName, email, role }, process.env.JWT_SECRET, {
+    expiresIn: "1d", // TODO : move to config
+  });
+};
+
+// EJS templates
+// Send email verification
+const verifyEmailTemplate = fs.readFileSync("../views/emails/verifyEmail.ejs", {
+  encoding: "utf-8",
+});
+// Send password reset
+const passwordResetTemplate = fs.readFileSync(
+  "./src/views/emails/passwordReset.ejs",
+  { encoding: "utf-8" }
+);
+
+// Email Logics
+// Render the emails
+const getVerifyEmailText = (hostUrl, token, data) => {
+  return ejs.render(verifyEmailTemplate, {
+    ...data,
+    path: hostUrl + `/auth/verify`,
+    token,
+  }); // Return html with Verify link - ${hostUrl}/auth/verify/${token}
+};
+const getResetEmailText = (hostUrl, token, data) => {
+  return ejs.render(passwordResetTemplate, {
+    ...data,
+    path: hostUrl + `/auth/reset`,
+    token,
+  }); // Return html with Password Reset link - ${hostUrl}/auth/reset/${token}
+};
+
+// Send the emails using emailer module
+const sendVerifyEmail = async (req, res, userData) => {
+  const { email } = req.body;
+  // const hostUrl = `${req.protocol}://${req.get("host")}`;
+  const hostUrl = FE_PORT;
+  return await sendAuthEmail(
+    req,
+    res,
+    "Verification",
+    userData,
+    email,
+    hostUrl,
+    getVerifyEmailText
+  );
+};
+
+// Send password reset email
+const sendResetEmail = async (req, res) => {
+  // const hostUrl = `${req.protocol}://${req.get("host")}`;
+  const hostUrl = FE_PORT;
+  const { email } = req.body;
+  const user = await User.findOne({
+    where: { email },
+    attributes: userController.attributes,
+    raw: true,
+  });
+  if (user) {
+    return await sendAuthEmail(
+      req,
+      res,
+      "Password reset",
+      user,
+      email,
+      hostUrl,
+      getResetEmailText
+    );
+  }
+  return handleError(res, {
+    status: 404,
+    message: "User not found",
+  });
+};
 
 module.exports = {
-  login: async (req, res) => {
+  login: async (req, res, next) => {
     try {
       // Check if user exists by email
       const { email, password } = req.body;
-      const user = await User.findOne({ where: { email } });
+      const user = await Users.findOne({ where: { email } });
       if (!user) {
         return res.status(401).json({ message: 'User not found' });
       }
@@ -43,6 +120,8 @@ module.exports = {
         message: 'Login success',
         token,
         username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         gender: user.gender,
         avatar: user.avatar,
@@ -57,7 +136,7 @@ module.exports = {
   },
 
   userRegister: async (req, res) => {
-    const { name, email, password } = req.body;
+    const { username, firstName, lastName, email, password } = req.body;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(422).json({ message: errors.array() });
@@ -73,7 +152,9 @@ module.exports = {
       const hashedPassword = await bcrypt.hash(password, salt);
 
       const newUser = await User.create({
-        name,
+        firstName,
+        lastName,
+        username,
         email,
         password: hashedPassword,
         role: 'user',
@@ -87,7 +168,7 @@ module.exports = {
   },
 
   adminRegister: async (req, res) => {
-    const { name, email, password } = req.body;
+    const { username, firstName, lastName, email, password } = req.body;
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -104,7 +185,9 @@ module.exports = {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
       const newAdmin = await User.create({
-        name,
+        firstName,
+        lastName,
+        username,
         email,
         password: hashedPassword,
         role: 'admin',
@@ -154,5 +237,37 @@ module.exports = {
         return res.status(500).json({ message: err.message });
       }
     }
+  },
+
+  verifyEmail: async (req, res) => {
+    const { token } = req.params;
+    console.log(token);
+    if (token) {
+      try {
+        // verify and decode the token
+        const firstData = jwt.verify(token, process.env.JWT_SECRET);
+        // verify the token using tokenStore
+        if (!verifyAndInvalidateLatestToken(firstData.email, token))
+          return res.status(400).json({ message: "Token expired" });
+
+        // second data input
+        // TODO : validation
+        const secondData = {gender,address,contact} = req.body;
+        
+        // create the new user
+        const user = await User.create({ ...firstData, ...secondData });
+        // generate auth token for the new user
+        const authToken = generateAuthToken(user);
+        return res.json({
+          message: "Email Registered and Verified Successfully",
+          token: authToken,
+          name: user.name,
+        });
+      } catch (error) {
+        return handleError(res, error);
+      }
+    }
+    return res.status(404).json({ message: "Token not found" });
+    // return await sendVerifyEmail(req, res);
   },
 };

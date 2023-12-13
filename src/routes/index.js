@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const router = Router();
-const authRoute = require('./auth.route');
+const authRoute = require('./authRoute');
 // const userRoute = require('./user.route');
 
 // const {verifiedToken} = require('../middleware/authentication');
