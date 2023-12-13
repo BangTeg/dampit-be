@@ -1,7 +1,7 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const config = require("../config/emailerConfig");
+const config = require("../config/emailConfig");
 
 const {
   expiresIn,
@@ -118,7 +118,7 @@ const sendAuthEmail = async (req, res, name, data, email, hostUrl, getText) => {
 const tokenStore = {};
 
 // Verify token in tokenStore
-const verifyAndInvalidateLatestToken = (email, token) => {
+const verifyAndInvalidateLastToken = (email, token) => {
   const storedToken = tokenStore[email];
   if (storedToken === token) {
     try {
@@ -164,5 +164,5 @@ cleanExpired(); // start cleanExpired interval loop
 module.exports = {
   sendEmail,
   sendAuthEmail,
-  verifyAndInvalidateLatestToken,
+  verifyAndInvalidateLastToken,
 };
