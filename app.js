@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const { handleError } = require('./src/middleware/errorHandler');
 const express = require('express');
 const app = express();
 const port = process.env.PORT;
@@ -28,15 +29,12 @@ app.use(cors({
 
 app.use("/", route);
 
+// Error handling - place it after defining your routes
+app.use(handleError);
+
 // Welcome page
 app.get('/', (req, res) => {
   res.send('Dampit Trans Solo, Rental Mobil Paling Terpercaya di Kota Solo');
-});
-
-// Error handling
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).send(`Internal Server Error: ${err.message}`);
 });
 
 // Listen to port
