@@ -1,4 +1,5 @@
-require(dotenv).config()
+require("dotenv").config()
+
 const { FE_PORT } = process.env;
 
 const { Users } = require('../../db/models');
@@ -10,6 +11,7 @@ const { body, validationResult } = require('express-validator');
 const { crudControllers } = require('../utils/crud');
 
 const fs = require('fs');
+const path = require('path');
 const ejs = require('ejs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -25,14 +27,13 @@ const generateAuthToken = (user) => {
 
 // EJS templates
 // Send email verification
-const verifyEmailTemplate = fs.readFileSync("../views/emails/verifyEmail.ejs", {
-  encoding: "utf-8",
+const verifyEmailTemplate = fs.readFileSync(path.join(__dirname, "../views/emails/verifyEmail.ejs"), {
+  encoding: "utf-8"
 });
 // Send password reset
-const passwordResetTemplate = fs.readFileSync(
-  "./src/views/emails/passwordReset.ejs",
-  { encoding: "utf-8" }
-);
+const passwordResetTemplate = fs.readFileSync(path.join(__dirname, "../views/emails/passwordReset.ejs"), {
+  encoding: "utf-8"
+});
 
 // Email Logics
 // Render the emails
@@ -72,7 +73,7 @@ const sendResetEmail = async (req, res) => {
   // const hostUrl = `${req.protocol}://${req.get("host")}`;
   const hostUrl = FE_PORT;
   const { email } = req.body;
-  const user = await User.findOne({
+  const user = await Users.findOne({
     where: { email },
     attributes: userController.attributes,
     raw: true,
@@ -142,7 +143,7 @@ module.exports = {
       return res.status(422).json({ message: errors.array() });
     }
     try {
-      const userExist = await User.findOne({ where: { email } });
+      const userExist = await Users.findOne({ where: { email } });
       if (userExist) {
         return res.status(409).json({ message: 'Email already exists' });
       }
@@ -151,7 +152,7 @@ module.exports = {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      const newUser = await User.create({
+      const newUser = await Users.create({
         firstName,
         lastName,
         username,
@@ -176,7 +177,7 @@ module.exports = {
     }
 
     try {
-      const user = await User.findOne({ where: { email } });
+      const user = await Users.findOne({ where: { email } });
       if (user) {
         return res.status(409).json({ message: 'Email already exists' });
       }
@@ -184,7 +185,7 @@ module.exports = {
       // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
-      const newAdmin = await User.create({
+      const newAdmin = await Users.create({
         firstName,
         lastName,
         username,
@@ -228,7 +229,7 @@ module.exports = {
 
         // Update password
         return await crudControllers.update(
-          User,
+          Users,
           { attributes: userController.attributes },
           Number(id),
           { password: hashedPassword }
@@ -247,15 +248,15 @@ module.exports = {
         // verify and decode the token
         const firstData = jwt.verify(token, process.env.JWT_SECRET);
         // verify the token using tokenStore
-        if (!verifyAndInvalidateLatestToken(firstData.email, token))
+        if (!verifyAndInvalidateLastToken(firstData.email, token))
           return res.status(400).json({ message: "Token expired" });
 
         // second data input
         // TODO : validation
-        const secondData = {gender,address,contact} = req.body;
+        const secondData = { gender, address, contact } = req.body;
         
         // create the new user
-        const user = await User.create({ ...firstData, ...secondData });
+        const user = await Users.create({ ...firstData, ...secondData });
         // generate auth token for the new user
         const authToken = generateAuthToken(user);
         return res.json({
