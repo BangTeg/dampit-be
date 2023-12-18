@@ -10,22 +10,10 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       userId:{
-        type: Sequelize.INTEGER,
-        references: {
-          model: 'Users',
-          key: 'id'
-        },
-        onUpdate: 'cascade',
-        onDelete: 'cascade'
+        type: Sequelize.INTEGER
       },
       vehicleId:{
-        type: Sequelize.INTEGER,
-        references: {
-          model: 'Vehicles',
-          key: 'id'
-        },
-        onUpdate: 'cascade',
-        onDelete: 'cascade'
+        type: Sequelize.INTEGER
       },
       pickUp: {
         type: Sequelize.STRING
@@ -43,13 +31,19 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       pickDate: {
+        allowNull: false,
         type: Sequelize.DATE
       },
       dropDate: {
+        allowNull: false,
         type: Sequelize.DATE
       },
       status: {
         type: Sequelize.ENUM('pending', 'approved', 'rejected', 'finished', 'cancelled')
+      },
+      finishedAt: {
+        allowNull: false,
+        type: Sequelize.DATE
       },
       createdAt: {
         allowNull: false,
