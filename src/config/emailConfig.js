@@ -1,8 +1,8 @@
 // Import and configure the dotenv package to load environment variables from a .env file.
-require("dotenv").config();
+require('dotenv').config();
 
 // Configuration Constants
-const expiresIn = '6m'; // Expiration time for verification links (6 minutes).
+const expiresIn = 86400000;  // Expiration period for tokens in milliseconds (1 day).
 const resendCooldown = 60000; // Cooldown period for resending emails in milliseconds (60 seconds).
 const cleanInterval = 300000; // Interval for cleaning token store in milliseconds (5 minutes).
 

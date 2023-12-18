@@ -1,4 +1,5 @@
-require("dotenv").config();
+require('dotenv').config();
+
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const config = require("../config/emailConfig");
@@ -46,7 +47,7 @@ const sendEmail = (mailOptions) => {
 };
 
 // Send an Auth email
-const sendAuthEmail = async (req, res, name, data, email, hostUrl, getText) => {
+const sendAuthEmail = async (req, res, title, email, firstName, hostUrl, getText) => {
   // Check email's cooldown in tokenStore
   if (tokenStore[email]) {
     const iat = jwt.decode(tokenStore[email]).iat * 1000;
@@ -55,61 +56,43 @@ const sendAuthEmail = async (req, res, name, data, email, hostUrl, getText) => {
     console.log(diff);
     if (diff < resendCooldown) {
       return res.status(400).json({
-        message: `${name} email not sent - please wait`,
+        message: `${title} email not sent - please wait`,
         cooldown: resendCooldown - diff,
       });
     }
   }
 
-  // // Send email with token
-  // const createLink = async (data, email, hostUrl, name, getText) => {
-  //   const token = jwt.sign(data, process.env.JWT_SECRET, { expiresIn });
-
-  //   return await sendEmail({
-  //     ...mailOptions,
-  //     subject: mailOptions.subjectPrefix + name,
-  //     to: email,
-  //     html: getText(hostUrl, token, data),
-  //   })
-  //     .then(() => {
-  //       tokenStore[email] = token;
-  //       console.log("Updated tokenStore:", tokenStore);
-  //       return "success";
-  //     })
-  //     .catch((e) => {
-  //       console.error(e);
-  //       return "notsent";
-  //     });
-  // };
-  // const emailerResult = await createLink(data, email, hostUrl, name, getText);
-
   // Send email with token
-  const token = jwt.sign(data, process.env.JWT_SECRET, { expiresIn });
+  const token = jwt.sign(email, process.env.JWT_SECRET);
+  console.log("Generated Token:", token);
+  
   const emailerResult = await sendEmail({
     ...mailOptions,
-    subject: mailOptions.subjectPrefix + name,
+    subject: mailOptions.subjectPrefix + title,
     to: email,
-    html: getText(hostUrl, token, data),
+    html: getText(hostUrl, token, firstName),
   })
     .then(() => {
       tokenStore[email] = token;
       console.log("Updated tokenStore:", tokenStore);
-      return "success";
+      return {
+        success: true,
+        token: token,
+        message: `${title} email sent`
+      };
     })
     .catch((e) => {
-      console.error(e);
-      return "not sent";
+      console.error("Error sending email:", e);
+      return { success: false, message: `${title} email not sent` };
     });
-
-  if (emailerResult === "success")
+  
+  if (emailerResult.success)
     return res.status(200).json({
-      message: `${name} email sent`,
+      message: emailerResult.message,
     });
-  // else
-  // if (emailerResult === "not sent")
   return res.status(400).json({
-    message: `${name} email not sent`,
-  });
+    message: emailerResult.message,
+  });  
 };
 
 // Verification Token Logics
@@ -120,32 +103,37 @@ const tokenStore = {};
 // Verify token in tokenStore
 const verifyAndInvalidateLastToken = (email, token) => {
   const storedToken = tokenStore[email];
+  console.log("Stored Token:", storedToken);
+
   if (storedToken === token) {
     try {
+      // Verify the token (check if the token is still valid)
+      const verified = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("Token Payload:", verified);
+
+      // Remove the token from the tokenStore
       delete tokenStore[email];
-    } catch (delErr) {
-      console.error(delErr);
+      console.log("Token invalidated successfully");
+      
+      return true;
+    } catch (err) {
+      console.error("Error deleting token :", err);
     }
-    return true;
+    // return true;
   }
+  console.log("Token verification failed");
   return false;
 };
 
 // Remove expired tokens from tokenStore (called every set interval)
 const cleanExpired = () => {
-  // console.log("cleaning tokenStore");
-  // console.log(tokenStore);
   let count = 0;
   for (const [email, token] of Object.entries(tokenStore)) {
     try {
       // verify the token (check if the token is still valid)
       const verified = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Add this line to log the token payload
-      // console.log("Token Payload:", verified);
-      // console.log("Token Payload:", new Date().getTime());
+      console.log("Token Payload:", verified);
     } catch (err) {
-      // console.log(`${token} is invalid and removed`);
       try {
         delete tokenStore[email];
         count += 1;
