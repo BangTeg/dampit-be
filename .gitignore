@@ -11,3 +11,6 @@ package-lock.json
 .history
 
 projectStructure.txt
+
+error.log
+combined.log

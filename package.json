@@ -37,12 +37,15 @@
     "express-session": "^1.17.3",
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.5",
+    "nanoid": "^5.0.4",
     "nodemailer": "^6.9.7",
     "nodemon": "^3.0.1",
     "passport": "^0.7.0",
     "path": "^0.12.7",
-    "sequelize": "^6.35.1"
+    "sequelize": "^6.35.1",
+    "winston": "^3.11.0"
   }
 }
