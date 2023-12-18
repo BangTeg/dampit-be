@@ -1,11 +1,11 @@
-require("dotenv").config()
+require('dotenv').config()
 
 const { FE_PORT } = process.env;
 
 const { Users } = require('../../db/models');
 const userController = require('./userController');
 
-const { sendAuthEmail, verifyAndInvalidateLastToken} = require('../utils/emailer');
+const { sendAuthEmail, verifyAndInvalidateLastToken } = require('../utils/emailer');
 const { handleError } = require('../middleware/errorHandler');
 const { body, validationResult } = require('express-validator');
 const { crudControllers } = require('../utils/crud');
@@ -15,64 +15,66 @@ const path = require('path');
 const ejs = require('ejs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+// const logger = require('../utils/logger');
 
 // Generate JWT token
 const generateAuthToken = (user) => {
   const { id, firstName, lastName, email, role } = user;
-  // console.log(user);
   return jwt.sign({ id, firstName, lastName, email, role }, process.env.JWT_SECRET, {
-    expiresIn: "1d", // TODO : move to config
+    expiresIn: 86400000, // TODO: move to config
   });
 };
 
 // EJS templates
 // Send email verification
-const verifyEmailTemplate = fs.readFileSync(path.join(__dirname, "../views/emails/verifyEmail.ejs"), {
+const verifyEmailTemplate = fs.readFileSync("src/views/emails/verifyEmail.ejs", {
   encoding: "utf-8"
 });
+
 // Send password reset
-const passwordResetTemplate = fs.readFileSync(path.join(__dirname, "../views/emails/passwordReset.ejs"), {
+const passwordResetTemplate = fs.readFileSync("src/views/emails/passwordReset.ejs", {
   encoding: "utf-8"
 });
 
 // Email Logics
 // Render the emails
-const getVerifyEmailText = (hostUrl, token, data) => {
+const getVerifyEmailText = (hostUrl, token, firstName) => {
   return ejs.render(verifyEmailTemplate, {
-    ...data,
+    firstName,
     path: hostUrl + `/auth/verify`,
     token,
-  }); // Return html with Verify link - ${hostUrl}/auth/verify/${token}
+  });
 };
-const getResetEmailText = (hostUrl, token, data) => {
+
+const getResetEmailText = (hostUrl, token, firstName) => {
   return ejs.render(passwordResetTemplate, {
-    ...data,
+    firstName,
     path: hostUrl + `/auth/reset`,
     token,
-  }); // Return html with Password Reset link - ${hostUrl}/auth/reset/${token}
+  });
 };
 
 // Send the emails using emailer module
-const sendVerifyEmail = async (req, res, userData) => {
-  const { email } = req.body;
-  // const hostUrl = `${req.protocol}://${req.get("host")}`;
-  const hostUrl = FE_PORT;
+const sendVerifyEmail = async (req, res, email, firstName) => {
+  // const { email, firstName } = req.body;
+  // const hostUrl = FE_PORT;
+  const hostUrl = `${req.protocol}://${req.get("host")}`;
   return await sendAuthEmail(
     req,
     res,
     "Verification",
-    userData,
     email,
+    firstName,
     hostUrl,
     getVerifyEmailText
   );
 };
 
 // Send password reset email
-const sendResetEmail = async (req, res) => {
-  // const hostUrl = `${req.protocol}://${req.get("host")}`;
-  const hostUrl = FE_PORT;
-  const { email } = req.body;
+const sendResetEmail = async (req, res, email, firstName) => {
+  // const hostUrl = FE_PORT;
+  // const { email } = req.body;
+  const hostUrl = `${req.protocol}://${req.get("host")}`;
   const user = await Users.findOne({
     where: { email },
     attributes: userController.attributes,
@@ -83,16 +85,17 @@ const sendResetEmail = async (req, res) => {
       req,
       res,
       "Password reset",
-      user,
       email,
+      firstName,
       hostUrl,
       getResetEmailText
     );
   }
-  return handleError(res, {
+  const error = {
     status: 404,
     message: "User not found",
-  });
+  };
+  return handleError(error, req, res);
 };
 
 module.exports = {
@@ -102,7 +105,11 @@ module.exports = {
       const { email, password } = req.body;
       const user = await Users.findOne({ where: { email } });
       if (!user) {
-        return res.status(401).json({ message: 'User not found' });
+        const error = {
+          status: 401,
+          message: 'User not found',
+        };
+        return handleError(error, req, res);
       }
 
       // Check if password matches
@@ -110,10 +117,14 @@ module.exports = {
 
       // Debugging
       console.log(`password ${password}, dbpassword ${user.password}`);
-      
+
       // If password doesn't match
       if (!isMatch) {
-        return res.status(401).json({ message: 'Wrong password, try again' });
+        const error = {
+          status: 401,
+          message: 'Wrong password, try again',
+        };
+        return handleError(error, req, res);
       }
 
       const token = generateAuthToken(user);
@@ -131,28 +142,49 @@ module.exports = {
         ktp: user.ktp,
         role: user.role
       });
-    } catch (err) {
-      return res.status(500).json({ message: err.message });
+    } catch (error) {
+      // logger.error(error);
+      return handleError(error, req, res);
     }
   },
 
   userRegister: async (req, res) => {
-    const { username, firstName, lastName, email, password } = req.body;
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ message: errors.array() });
-    }
     try {
+      const { username, firstName, lastName, email, password } = req.body;
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const error = {
+          status: 422,
+          message: errors.array(),
+        };
+        return handleError(error, req, res);
+      }
+
+      // Check if user exists by email
       const userExist = await Users.findOne({ where: { email } });
       if (userExist) {
-        return res.status(409).json({ message: 'Email already exists' });
+        const error = {
+          status: 409,
+          message: 'Email already exists',
+        };
+        return handleError(error, req, res);
+      }
+
+      // Check if user exists by username
+      const usernameExist = await Users.findOne({ where: { username } });
+      if (usernameExist) {
+        const error = {
+          status: 409,
+          message: 'Username already exists',
+        };
+        return handleError(error, req, res);
       }
 
       // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      const newUser = await Users.create({
+      const data = await Users.create({
         firstName,
         lastName,
         username,
@@ -162,9 +194,10 @@ module.exports = {
       });
 
       // Send email verification
-      return await sendVerifyEmail(req, res, newUser);
-    } catch (err) {
-      return res.status(500).json({ message: err.message });
+      return await sendVerifyEmail(req, res, email, firstName, data);
+    } catch (error) {
+      // logger.error(error);
+      return handleError(error, req, res);
     }
   },
 
@@ -173,19 +206,27 @@ module.exports = {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ message: errors.array() });
+      const error = {
+        status: 422,
+        message: errors.array(),
+      };
+      return handleError(error, req, res);
     }
 
     try {
       const user = await Users.findOne({ where: { email } });
       if (user) {
-        return res.status(409).json({ message: 'Email already exists' });
+        const error = {
+          status: 409,
+          message: 'Email already exists',
+        };
+        return handleError(error, req, res);
       }
 
       // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
-      const newAdmin = await Users.create({
+      const data = await Users.create({
         firstName,
         lastName,
         username,
@@ -195,9 +236,10 @@ module.exports = {
       });
 
       // Send email verification
-      return await sendVerifyEmail(req, res, newAdmin);
-    } catch (err) {
-      return res.status(500).json({ message: err.message });
+      return await sendVerifyEmail(req, res, data);
+    } catch (error) {
+      // logger.error(error);
+      return handleError(error, req, res);
     }
   },
 
@@ -209,24 +251,26 @@ module.exports = {
   resetPassword: async (req, res) => {
     const { token } = req.params;
     console.log(token);
-
+  
     if (token) {
       try {
         // Verify and decode token
-        const { id, email } = await jwt.verify(
-          token,
-          process.env.JWT_SECRET
-        );
-
+        const decodedToken = await jwt.verify(token, process.env.JWT_SECRET);
+        const { id, email } = decodedToken;
+  
         // Verify token using token store
         if (!verifyAndInvalidateLastToken(email, token)) {
-          return res.status(401).json({ message: 'Token expired' });
+          const error = {
+            status: 401,
+            message: 'Token expired',
+          };
+          return handleError(error, req, res);
         }
-
+  
         const { password } = req.body;
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-
+  
         // Update password
         return await crudControllers.update(
           Users,
@@ -234,30 +278,34 @@ module.exports = {
           Number(id),
           { password: hashedPassword }
         )(req, res);
-      } catch (err) {
-        return res.status(500).json({ message: err.message });
+      } catch (error) {
+        // logger.error(error);
+        return handleError(error, req, res);
       }
     }
   },
-
+  
   verifyEmail: async (req, res) => {
     const { token } = req.params;
     console.log(token);
+  
     if (token) {
       try {
-        // verify and decode the token
+        // Verify and decode the token
         const firstData = jwt.verify(token, process.env.JWT_SECRET);
-        // verify the token using tokenStore
+        console.log("Decoded Token:", firstData);
+  
+        // Verify the token using tokenStore
         if (!verifyAndInvalidateLastToken(firstData.email, token))
           return res.status(400).json({ message: "Token expired" });
-
-        // second data input
-        // TODO : validation
+  
+        // Second data input
+        // TODO: validation
         const secondData = { gender, address, contact } = req.body;
-        
-        // create the new user
+  
+        // Create the new user
         const user = await Users.create({ ...firstData, ...secondData });
-        // generate auth token for the new user
+        // Generate auth token for the new user
         const authToken = generateAuthToken(user);
         return res.json({
           message: "Email Registered and Verified Successfully",
@@ -268,7 +316,5 @@ module.exports = {
         return handleError(res, error);
       }
     }
-    return res.status(404).json({ message: "Token not found" });
-    // return await sendVerifyEmail(req, res);
   },
 };
