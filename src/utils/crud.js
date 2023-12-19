@@ -2,7 +2,7 @@ const { handleError } = require("../middleware/errorHandler");
 
 const defaultPageLimit = 10;
 
-const crudControllers = {
+const crudController = {
   getAll: (model, options = {}) => {
     return async (req, res) => {
       try {
@@ -193,4 +193,4 @@ const crudControllers = {
   },
 };
 
-module.exports = { crudControllers };
+module.exports = { crudController };
