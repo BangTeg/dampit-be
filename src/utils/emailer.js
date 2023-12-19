@@ -48,19 +48,19 @@ const sendEmail = (mailOptions) => {
 
 // Send an Auth email
 const sendAuthEmail = async (req, res, title, email, firstName, hostUrl, getText) => {
-  // Check email's cooldown in tokenStore
-  if (tokenStore[email]) {
-    const iat = jwt.decode(tokenStore[email]).iat * 1000;
-    const now = new Date().getTime();
-    const diff = now - iat;
-    console.log(diff);
-    if (diff < resendCooldown) {
-      return res.status(400).json({
-        message: `${title} email not sent - please wait`,
-        cooldown: resendCooldown - diff,
-      });
-    }
-  }
+  // // Check email's cooldown in tokenStore
+  // if (tokenStore[email]) {
+  //   const iat = jwt.decode(tokenStore[email]).iat * 1000;
+  //   const now = new Date().getTime();
+  //   const diff = now - iat;
+  //   console.log(diff);
+  //   if (diff < resendCooldown) {
+  //     return res.status(400).json({
+  //       message: `${title} email not sent - please wait`,
+  //       cooldown: resendCooldown - diff,
+  //     });
+  //   }
+  // }
 
   // Send email with token
   const token = jwt.sign(email, process.env.JWT_SECRET);
@@ -97,11 +97,12 @@ const sendAuthEmail = async (req, res, title, email, firstName, hostUrl, getText
 
 // Verification Token Logics
 
-// Temporarily stores all sent jwt token and its email and cooldown
+// Temporarily stores all sent jwt token and its email and cool down
 const tokenStore = {};
 
 // Verify token in tokenStore
 const verifyAndInvalidateLastToken = (email, token) => {
+  console.log("token", token);
   const storedToken = tokenStore[email];
   console.log("Stored Token:", storedToken);
 
