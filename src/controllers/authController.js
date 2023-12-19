@@ -8,7 +8,7 @@ const userController = require('./userController');
 const { sendAuthEmail, verifyAndInvalidateLastToken } = require('../utils/emailer');
 const { handleError } = require('../middleware/errorHandler');
 const { body, validationResult } = require('express-validator');
-const { crudControllers } = require('../utils/crud');
+const { crudController } = require('../utils/crud');
 
 const fs = require('fs');
 const path = require('path');
@@ -194,7 +194,8 @@ module.exports = {
       });
 
       // Send email verification
-      return await sendVerifyEmail(req, res, email, firstName, data);
+      // return await sendVerifyEmail(req, res, email, firstName, data);
+      return await sendVerifyEmail(req, res, email, firstName);
     } catch (error) {
       // logger.error(error);
       return handleError(error, req, res);
@@ -202,45 +203,55 @@ module.exports = {
   },
 
   adminRegister: async (req, res) => {
-    const { username, firstName, lastName, email, password } = req.body;
-
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      const error = {
-        status: 422,
-        message: errors.array(),
-      };
-      return handleError(error, req, res);
-    }
-
     try {
-      const user = await Users.findOne({ where: { email } });
-      if (user) {
+      const { username, firstName, lastName, email, password } = req.body;
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
         const error = {
-          status: 409,
-          message: 'Email already exists',
+          status: 422,
+          message: errors.array(),
         };
         return handleError(error, req, res);
       }
 
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      const data = await Users.create({
-        firstName,
-        lastName,
-        username,
-        email,
-        password: hashedPassword,
-        role: 'admin',
-      });
+      
+        const user = await Users.findOne({ where: { email } });
+        if (user) {
+          const error = {
+            status: 409,
+            message: 'Email already exists',
+          };
+          return handleError(error, req, res);
+        }
 
-      // Send email verification
-      return await sendVerifyEmail(req, res, data);
-    } catch (error) {
-      // logger.error(error);
-      return handleError(error, req, res);
-    }
+        // Check if user exists by username
+        const usernameExist = await Users.findOne({ where: { username } });
+        if (usernameExist) {
+          const error = {
+            status: 409,
+            message: 'Username already exists',
+          };
+          return handleError(error, req, res);
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const data = await Users.create({
+          firstName,
+          lastName,
+          username,
+          email,
+          password: hashedPassword,
+          role: 'admin',
+        });
+
+        // Send email verification
+        return await sendVerifyEmail(req, res, email, firstName);
+      } catch (error) {
+        // logger.error(error);
+        return handleError(error, req, res);
+      }
   },
 
   logout: async (req, res) => {
@@ -272,7 +283,7 @@ module.exports = {
         const hashedPassword = await bcrypt.hash(password, salt);
   
         // Update password
-        return await crudControllers.update(
+        return await crudController.update(
           Users,
           { attributes: userController.attributes },
           Number(id),

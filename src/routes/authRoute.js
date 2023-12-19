@@ -12,13 +12,13 @@ router.post('/login', authController.login);
 router.post('/register', authController.userRegister);
 
 // Route to admin register
-router.post('/admin-register', authController.adminRegister);
+router.post('/adminRegister', authController.adminRegister);
 
 // Route to logout
 router.post('/logout', authController.logout);
 
 // Route to reset password
-router.post('/reset', authController.resetPassword);
+// router.post('/reset', authController.resetPassword);
 router.post("/reset/:token", authController.resetPassword);
 
 // Route to verify email
