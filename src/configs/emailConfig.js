@@ -1,0 +1,37 @@
+// Import and configure the dotenv package to load environment variables from a .env file.
+require('dotenv').config();
+
+// Configuration Constants
+const expiresIn = 86400000;  // Expiration period for tokens in milliseconds (1 day).
+const resendCooldown = 60000; // Cooldown period for resending emails in milliseconds (60 seconds).
+const cleanInterval = 300000; // Interval for cleaning token store in milliseconds (5 minutes).
+
+// Destructure the relevant environment variables for SMTP (email) configuration.
+const {
+  SMTP_HOST,
+  SMTP_PORT = 587,
+  SMTP_USERNAME,
+  SMTP_PASSWORD,
+  SMTP_SECURE = null, // Default to null if not specified.
+} = process.env;
+
+// Define default email options.
+const mailOptions = {
+  from: SMTP_USERNAME, // Sender's email address.
+  // to: "@gmail.com", // Recipient's email address.
+  subjectPrefix: "Dampit Trans Solo ", // Prefix for email subjects.
+  // text: `link verifikasi - `, // Text for email content.
+};
+
+// Export the configuration for the emailer, including constants, SMTP settings, and email options.
+module.exports = {
+  expiresIn,
+  resendCooldown,
+  cleanInterval,
+  SMTP_HOST,
+  SMTP_PORT,
+  SMTP_USERNAME,
+  SMTP_PASSWORD,
+  SMTP_SECURE,
+  mailOptions
+};
