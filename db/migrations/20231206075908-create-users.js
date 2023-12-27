@@ -3,11 +3,12 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('Users', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
+      id: { 
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        allowNull: false,
+        unique: true
       },
       username: {
         type: Sequelize.STRING
@@ -40,6 +41,12 @@ module.exports = {
         type: Sequelize.STRING
       },
       ktp: {
+        type: Sequelize.STRING
+      },
+      isVerified: {
+        type: Sequelize.ENUM('yes', 'no')
+      },
+      verificationToken: {
         type: Sequelize.STRING
       },
       createdAt: {
