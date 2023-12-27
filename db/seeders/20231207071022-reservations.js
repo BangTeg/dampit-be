@@ -5,7 +5,7 @@ module.exports = {
   async up (queryInterface, Sequelize) {
     return queryInterface.bulkInsert('Reservations', [
       {
-        userId: 'user-id-1',
+        userId: '1',
         vehicleId: 1,
         pickUp: 'Pickup Location 1',
         dropOff: 'Drop-off Location 1',
@@ -20,7 +20,7 @@ module.exports = {
         updatedAt: new Date(),
       },
       {
-        userId: 'user-id-2',
+        userId: '2',
         vehicleId: 2,
         pickUp: 'Pickup Location 2',
         dropOff: 'Drop-off Location 2',
@@ -30,6 +30,7 @@ module.exports = {
         pickDate: new Date('2023-12-20T10:00:00Z'),
         dropDate: new Date('2023-12-21T20:00:00Z'),
         status: 'pending',
+        finishedAt: new Date('2023-12-21T20:30:00Z'),
         createdAt: new Date(),
         updatedAt: new Date(),
       },
