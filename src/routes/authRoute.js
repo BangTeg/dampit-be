@@ -22,7 +22,6 @@ router.post('/logout', authController.logout);
 router.post("/reset/:token", authController.resetPassword);
 
 // Route to verify email
-// router.post("/verify", authController.verifyEmail);
-router.post("/verify/:token", authController.verifyEmail);
+router.get("/verify/:token", authController.verifyEmail);
 
 module.exports = router;

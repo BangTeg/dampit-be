@@ -5,8 +5,8 @@ const { FE_PORT } = process.env;
 const { Users } = require('../../db/models');
 const userController = require('./userController');
 
-const { sendAuthEmail, verifyAndInvalidateLastToken } = require('../utils/emailer');
-const { handleError } = require('../middleware/errorHandler');
+const { sendAuthEmail, verifyAndInvalidateLastToken } = require('../utils/nodemailer');
+const { handleError } = require('../middlewares/errorHandler');
 const { body, validationResult } = require('express-validator');
 const { crudController } = require('../utils/crud');
 
@@ -15,6 +15,8 @@ const path = require('path');
 const ejs = require('ejs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
+const { error } = require('console');
 // const logger = require('../utils/logger');
 
 // Generate JWT token
@@ -38,26 +40,24 @@ const passwordResetTemplate = fs.readFileSync("src/views/emails/passwordReset.ej
 
 // Email Logics
 // Render the emails
-const getVerifyEmailText = (hostUrl, token, firstName) => {
+const getVerifyEmailText = (hostUrl, verificationToken, firstName) => {
   return ejs.render(verifyEmailTemplate, {
     firstName,
     path: hostUrl + `/auth/verify`,
-    token,
+    verificationToken,
   });
 };
 
-const getResetEmailText = (hostUrl, token, firstName) => {
+const getResetEmailText = (hostUrl, verificationToken, firstName) => {
   return ejs.render(passwordResetTemplate, {
     firstName,
     path: hostUrl + `/auth/reset`,
-    token,
+    verificationToken,
   });
 };
 
 // Send the emails using emailer module
-const sendVerifyEmail = async (req, res, email, firstName) => {
-  // const { email, firstName } = req.body;
-  // const hostUrl = FE_PORT;
+const sendVerifyEmail = async (req, res, email, firstName, verificationToken) => {
   const hostUrl = `${req.protocol}://${req.get("host")}`;
   return await sendAuthEmail(
     req,
@@ -66,12 +66,13 @@ const sendVerifyEmail = async (req, res, email, firstName) => {
     email,
     firstName,
     hostUrl,
-    getVerifyEmailText
+    getVerifyEmailText,
+    verificationToken
   );
 };
 
 // Send password reset email
-const sendResetEmail = async (req, res, email, firstName) => {
+const sendResetEmail = async (req, res, email, firstName, verificationToken) => {
   // const hostUrl = FE_PORT;
   // const { email } = req.body;
   const hostUrl = `${req.protocol}://${req.get("host")}`;
@@ -88,7 +89,8 @@ const sendResetEmail = async (req, res, email, firstName) => {
       email,
       firstName,
       hostUrl,
-      getResetEmailText
+      getResetEmailText,
+      verificationToken
     );
   }
   const error = {
@@ -99,11 +101,13 @@ const sendResetEmail = async (req, res, email, firstName) => {
 };
 
 module.exports = {
+  // login: async (req, res, next) => {
   login: async (req, res, next) => {
     try {
       // Check if user exists by email
       const { email, password } = req.body;
       const user = await Users.findOne({ where: { email } });
+
       if (!user) {
         const error = {
           status: 401,
@@ -112,11 +116,17 @@ module.exports = {
         return handleError(error, req, res);
       }
 
+      // Check if the user is verified
+      if (user.isVerified === 'no') {
+        const error = {
+          status: 403,
+          message: 'Email not verified. Please verify your email before logging in.',
+        };
+        return handleError(error, req, res);
+      }
+
       // Check if password matches
       const isMatch = await bcrypt.compare(password, user.password);
-
-      // Debugging
-      console.log(`password ${password}, dbpassword ${user.password}`);
 
       // If password doesn't match
       if (!isMatch) {
@@ -131,6 +141,7 @@ module.exports = {
       return res.status(200).json({
         message: 'Login success',
         token,
+        id: user.id,
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -140,7 +151,8 @@ module.exports = {
         address: user.address,
         contact: user.contact,
         ktp: user.ktp,
-        role: user.role
+        role: user.role,
+        isVerified: user.isVerified,
       });
     } catch (error) {
       // logger.error(error);
@@ -184,20 +196,30 @@ module.exports = {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
+      // Generate UUID for the user
+      const userId = uuidv4();
+
+      // Generate verification token
+      const verificationToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+        expiresIn: 86400000,
+      });
+
+
       const data = await Users.create({
+        id: userId,
         firstName,
         lastName,
         username,
         email,
         password: hashedPassword,
         role: 'user',
+        isVerified: 'no',
+        verificationToken,
       });
 
       // Send email verification
-      // return await sendVerifyEmail(req, res, email, firstName, data);
-      return await sendVerifyEmail(req, res, email, firstName);
+      return await sendVerifyEmail(req, res, email, firstName, verificationToken);
     } catch (error) {
-      // logger.error(error);
       return handleError(error, req, res);
     }
   },
@@ -214,44 +236,55 @@ module.exports = {
         return handleError(error, req, res);
       }
 
-      
-        const user = await Users.findOne({ where: { email } });
-        if (user) {
-          const error = {
-            status: 409,
-            message: 'Email already exists',
-          };
-          return handleError(error, req, res);
-        }
-
-        // Check if user exists by username
-        const usernameExist = await Users.findOne({ where: { username } });
-        if (usernameExist) {
-          const error = {
-            status: 409,
-            message: 'Username already exists',
-          };
-          return handleError(error, req, res);
-        }
-
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        const data = await Users.create({
-          firstName,
-          lastName,
-          username,
-          email,
-          password: hashedPassword,
-          role: 'admin',
-        });
-
-        // Send email verification
-        return await sendVerifyEmail(req, res, email, firstName);
-      } catch (error) {
-        // logger.error(error);
+      // Check if user exists by email
+      const userExist = await Users.findOne({ where: { email } });
+      if (userExist) {
+        const error = {
+          status: 409,
+          message: 'Email already exists',
+        };
         return handleError(error, req, res);
       }
+
+      // Check if user exists by username
+      const usernameExist = await Users.findOne({ where: { username } });
+      if (usernameExist) {
+        const error = {
+          status: 409,
+          message: 'Username already exists',
+        };
+        return handleError(error, req, res);
+      }
+
+      // Hash password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      // Generate UUID for the user
+      const userId = uuidv4();
+
+      // Generate verification token
+      const verificationToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+        expiresIn: 86400000,
+      });
+
+      const data = await Users.create({
+        id: userId,
+        firstName,
+        lastName,
+        username,
+        email,
+        password: hashedPassword,
+        role: 'admin',
+        isVerified: 'no',
+        verificationToken,
+      });
+
+      // Send email verification
+      return await sendVerifyEmail(req, res, email, firstName, verificationToken);
+    } catch (error) {
+      return handleError(error, req, res);
+    }
   },
 
   logout: async (req, res) => {
@@ -295,37 +328,40 @@ module.exports = {
       }
     }
   },
-  
+
   verifyEmail: async (req, res) => {
-    const { token } = req.params;
-    console.log(token);
+    try {
+      const { token } = req.params;
   
-    if (token) {
-      try {
-        // Verify and decode the token
-        const firstData = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("Decoded Token:", firstData);
+      // Verify and decode token
+      const decodedToken = await jwt.verify(token, process.env.JWT_SECRET);
+      const { userId } = decodedToken;
   
-        // Verify the token using tokenStore
-        if (!verifyAndInvalidateLastToken(firstData.email, token))
-          return res.status(400).json({ message: "Token expired" });
-  
-        // Second data input
-        // TODO: validation
-        const secondData = { gender, address, contact } = req.body;
-  
-        // Create the new user
-        const user = await Users.create({ ...firstData, ...secondData });
-        // Generate auth token for the new user
-        const authToken = generateAuthToken(user);
-        return res.json({
-          message: "Email Registered and Verified Successfully",
-          token: authToken,
-          name: user.name,
-        });
-      } catch (error) {
-        return handleError(res, error);
+      // Check if the user is already verified
+      const user = await Users.findOne({ where: { id: userId } });
+      if (!user) {
+        const error = {
+          status: 404,
+          message: 'User not found',
+        };
+        return handleError(error, req, res);
       }
+  
+      if (user.isVerified === 'yes') {
+        const error = {
+          status: 400,
+          message: 'User is already verified',
+        };
+        return handleError(error, req, res);
+      }
+  
+      // Update user's isVerified status in the database
+      await Users.update({ isVerified: 'yes' }, { where: { id: userId } });
+  
+      return res.status(200).json({ message: 'Email verification successful' });
+    } catch (error) {
+      return handleError(error, req, res);
     }
-  },
+  }  
+
 };
