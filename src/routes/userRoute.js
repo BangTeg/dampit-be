@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const userController = require('../controllers/userController');
-const { adminToken, verifiedToken } = require('../middleware/authentication')
-const { uploadAvatar, uploadKTP } = require('../config/multerConfig');
+const { adminToken, verifiedToken } = require('../middlewares/authentication')
+const { uploadAvatar, uploadKTP } = require('../configs/multerConfig');
 const reservationController = require("../controllers/reservationController");
 
 // Route to get all users
@@ -16,8 +16,9 @@ router.get('/filter', adminToken, userController.getByFilter);
 router.get('/profile', verifiedToken, userController.getByToken);
 router.get('/profile/:id', adminToken, userController.getById);
 
-// // Route to update a user's profile by token
+// Route to update a user's profile
 // router.patch('/profile', verifiedToken, userController.updateByToken);
+router.put('/profile', userController.updateByToken);
 
 // // Route to get reservations by the user's token
 // router.get("/reservation/token", verifiedToken, reservationController.getReservationsByUserToken);

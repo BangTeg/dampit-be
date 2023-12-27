@@ -11,7 +11,7 @@ const {
 const bcrypt = require('bcrypt');
 // const path = require('path');
 // const fs = require('fs');
-const { handleError } = require('../middleware/errorHandler');
+const { handleError } = require('../middlewares/errorHandler');
 const { crudController } = require('../utils/crud');
 const { Op } = require('sequelize');
 
@@ -94,6 +94,15 @@ module.exports = {
         });
       }
 
+      // Validate date parameters
+      if (parsedStartDate && parsedEndDate && parsedStartDate > parsedEndDate) {
+        return res.status(400).json({
+          code: 400,
+          status: 'Bad Request',
+          message: 'Invalid date range. startDate must be before or equal to endDate.',
+        });
+      }
+
       // Build the filter object based on the provided parameters
       const filter = {};
       if (role) filter.role = role;
@@ -137,6 +146,36 @@ module.exports = {
       Users,
       { attributes },
       id,
+      data
+    )(req, res);
+  },
+
+  // Route to update a user's profile by token
+  updateByToken: async (req, res) => {
+    const { user } = req;
+    const data = req.body;
+
+    // Check if the user is trying to update other's profile
+    if (data.id && data.id != user.id) {
+      return res.status(403).json({
+        code: 403,
+        status: "Forbidden",
+        message: "You do not have permission to edit other's profile.",
+      });
+    }
+
+    // Check if the user is trying to update their password
+    if (data.password) {
+      // Hash the new password
+      const salt = await bcrypt.genSalt();
+      data.password = await bcrypt.hash(data.password, salt);
+    }
+
+    // Update the user's profile
+    return await crudController.update(
+      Users,
+      { attributes },
+      user.id,
       data
     )(req, res);
   },
@@ -379,17 +418,15 @@ module.exports = {
         });
       }
 
-      // // Remove the user's avatar file if it exists
-      // if (user.avatar) {
-      //   const avatarPath = path.join(__dirname, `../src/avatar/${user.avatar}`);
-      //   fs.unlinkSync(avatarPath);
-      // }
+      // // Remove the user's avatar file if it exists in Google Cloud Storage
+      // 
 
-      // // Remove the user's CV file if it exists
-      // if (user.cv) {
-      //   const cvPath = path.join(__dirname, `../src/cv/${user.cv}`);
-      //   fs.unlinkSync(cvPath);
-      // }
+
+      // // Remove the user's KTP file if it exists in Google Cloud Storage
+      // 
+
+      // Get reservations associated with the user
+      const reservations = await Reservations.findAll({ where: { UserId: id } });
 
       // Remove the user's applications
       await Reservations.destroy({ where: { UserId: id } });
@@ -400,11 +437,13 @@ module.exports = {
       return res.status(200).json({
         code: 200,
         status: "OK",
-        message: "User's data deleted successfully.",
+        message: "User's whole data deleted successfully",
         id: user.id,
-        firstName: user.firstName,
-        role: user.role,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        reservations: reservations,
       });
     } catch (err) {
       return handleError(res, err);
