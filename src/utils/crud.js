@@ -1,4 +1,4 @@
-const { handleError } = require("../middleware/errorHandler");
+const { handleError } = require("../middlewares/errorHandler");
 
 const defaultPageLimit = 10;
 
