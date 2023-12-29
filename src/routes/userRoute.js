@@ -17,7 +17,6 @@ router.get('/profile', verifiedToken, userController.getByToken);
 router.get('/profile/:id', adminToken, userController.getById);
 
 // Route to update a user's profile
-// router.patch('/profile', verifiedToken, userController.updateByToken);
 router.put('/profile', userController.updateByToken);
 
 // // Route to get reservations by the user's token

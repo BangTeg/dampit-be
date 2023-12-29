@@ -7,17 +7,15 @@ const userController = require('./userController');
 
 const { sendAuthEmail, verifyAndInvalidateLastToken } = require('../utils/nodemailer');
 const { handleError } = require('../middlewares/errorHandler');
-const { body, validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 const { crudController } = require('../utils/crud');
 
 const fs = require('fs');
-const path = require('path');
+
 const ejs = require('ejs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
-const { error } = require('console');
-// const logger = require('../utils/logger');
 
 // Generate JWT token
 const generateAuthToken = (user) => {
@@ -40,39 +38,36 @@ const passwordResetTemplate = fs.readFileSync("src/views/emails/passwordReset.ej
 
 // Email Logics
 // Render the emails
-const getVerifyEmailText = (hostUrl, verificationToken, firstName) => {
+const getVerifyEmailText = (hostUrl, token, firstName) => {
   return ejs.render(verifyEmailTemplate, {
     firstName,
     path: hostUrl + `/auth/verify`,
-    verificationToken,
+    token,
   });
 };
 
-const getResetEmailText = (hostUrl, verificationToken, firstName) => {
+const getResetEmailText = (hostUrl, token, firstName) => {
   return ejs.render(passwordResetTemplate, {
     firstName,
     path: hostUrl + `/auth/reset`,
-    verificationToken,
+    token
   });
 };
 
-// Send the emails using emailer module
-const sendVerifyEmail = async (req, res, email, firstName, verificationToken) => {
+// Send the emails using nodemailer
+const sendVerifyEmail = async (req, res, email, firstName, token) => {
   const hostUrl = `${req.protocol}://${req.get("host")}`;
-  return await sendAuthEmail(
-    req,
-    res,
-    "Verification",
-    email,
-    firstName,
-    hostUrl,
-    getVerifyEmailText,
-    verificationToken
-  );
+  try {
+    await sendAuthEmail(req, res, "Verification", email, firstName, hostUrl, getVerifyEmailText, token);
+    return res.status(200).json({ success: true, message: 'Email verification sent successfully' });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
 };
 
 // Send password reset email
-const sendResetEmail = async (req, res, email, firstName, verificationToken) => {
+const sendResetEmail = async (req, res, email, firstName, token) => {
   // const hostUrl = FE_PORT;
   // const { email } = req.body;
   const hostUrl = `${req.protocol}://${req.get("host")}`;
@@ -90,7 +85,7 @@ const sendResetEmail = async (req, res, email, firstName, verificationToken) => 
       firstName,
       hostUrl,
       getResetEmailText,
-      verificationToken
+      token
     );
   }
   const error = {
@@ -199,12 +194,6 @@ module.exports = {
       // Generate UUID for the user
       const userId = uuidv4();
 
-      // Generate verification token
-      const verificationToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
-        expiresIn: 86400000,
-      });
-
-
       const data = await Users.create({
         id: userId,
         firstName,
@@ -214,11 +203,10 @@ module.exports = {
         password: hashedPassword,
         role: 'user',
         isVerified: 'no',
-        verificationToken,
       });
 
       // Send email verification
-      return await sendVerifyEmail(req, res, email, firstName, verificationToken);
+      return await sendVerifyEmail(req, res, email, firstName);
     } catch (error) {
       return handleError(error, req, res);
     }
@@ -263,11 +251,6 @@ module.exports = {
       // Generate UUID for the user
       const userId = uuidv4();
 
-      // Generate verification token
-      const verificationToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
-        expiresIn: 86400000,
-      });
-
       const data = await Users.create({
         id: userId,
         firstName,
@@ -277,11 +260,10 @@ module.exports = {
         password: hashedPassword,
         role: 'admin',
         isVerified: 'no',
-        verificationToken,
       });
 
       // Send email verification
-      return await sendVerifyEmail(req, res, email, firstName, verificationToken);
+      return await sendVerifyEmail(req, res, email, firstName);
     } catch (error) {
       return handleError(error, req, res);
     }
@@ -329,16 +311,26 @@ module.exports = {
     }
   },
 
-  verifyEmail: async (req, res) => {
+  verifyEmail : async (req, res) => {
     try {
       const { token } = req.params;
   
       // Verify and decode token
       const decodedToken = await jwt.verify(token, process.env.JWT_SECRET);
-      const { userId } = decodedToken;
+      
+      // Ensure the decoded token is an object with an email property
+      if (!decodedToken || !decodedToken.email) {
+        const error = {
+          status: 400,
+          message: 'Invalid token format',
+        };
+        return handleError(error, req, res);
+      }
+  
+      const email = decodedToken.email;
   
       // Check if the user is already verified
-      const user = await Users.findOne({ where: { id: userId } });
+      const user = await Users.findOne({ where: { email } });
       if (!user) {
         const error = {
           status: 404,
@@ -356,12 +348,12 @@ module.exports = {
       }
   
       // Update user's isVerified status in the database
-      await Users.update({ isVerified: 'yes' }, { where: { id: userId } });
+      await Users.update({ isVerified: 'yes' }, { where: { email } });
   
       return res.status(200).json({ message: 'Email verification successful' });
     } catch (error) {
       return handleError(error, req, res);
     }
-  }  
-
+  }
+  
 };

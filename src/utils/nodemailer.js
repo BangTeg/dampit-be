@@ -48,51 +48,28 @@ const sendEmail = (mailOptions) => {
 
 // Send an Auth email
 const sendAuthEmail = async (req, res, title, email, firstName, hostUrl, getText) => {
-  // // Check email's cooldown in tokenStore
-  // if (tokenStore[email]) {
-  //   const iat = jwt.decode(tokenStore[email]).iat * 1000;
-  //   const now = new Date().getTime();
-  //   const diff = now - iat;
-  //   console.log(diff);
-  //   if (diff < resendCooldown) {
-  //     return res.status(400).json({
-  //       message: `${title} email not sent - please wait`,
-  //       cooldown: resendCooldown - diff,
-  //     });
-  //   }
-  // }
+  try {
+    const token = jwt.sign({ email }, process.env.JWT_SECRET);
+    console.log("Generated Token:", token);
 
-  // Send email with token
-  const token = jwt.sign(email, process.env.JWT_SECRET);
-  console.log("Generated Token:", token);
-  
-  const emailerResult = await sendEmail({
-    ...mailOptions,
-    subject: mailOptions.subjectPrefix + title,
-    to: email,
-    html: getText(hostUrl, token, firstName),
-  })
-    .then(() => {
+    const emailerResult = await sendEmail({
+      ...mailOptions,
+      subject: mailOptions.subjectPrefix + title,
+      to: email,
+      html: getText(hostUrl, token, firstName),
+    });
+
+    if (emailerResult.success) {
       tokenStore[email] = token;
       console.log("Updated tokenStore:", tokenStore);
-      return {
-        success: true,
-        token: token,
-        message: `${title} email sent`
-      };
-    })
-    .catch((e) => {
-      console.error("Error sending email:", e);
-      return { success: false, message: `${title} email not sent` };
-    });
-  
-  if (emailerResult.success)
-    return res.status(200).json({
-      message: emailerResult.message,
-    });
-  return res.status(400).json({
-    message: emailerResult.message,
-  });  
+      return { success: true, message: emailerResult.message };
+    } else {
+      return { success: false, message: emailerResult.message };
+    }
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return { success: false, message: 'Internal Server Error' };
+  }
 };
 
 // Verification Token Logics
