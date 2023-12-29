@@ -33,7 +33,6 @@ module.exports = (sequelize, DataTypes) => {
     contact: DataTypes.STRING,
     ktp: DataTypes.STRING,
     isVerified: DataTypes.ENUM('yes', 'no'),
-    verificationToken: DataTypes.STRING,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE
   }, {

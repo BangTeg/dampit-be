@@ -46,9 +46,6 @@ module.exports = {
       isVerified: {
         type: Sequelize.ENUM('yes', 'no')
       },
-      verificationToken: {
-        type: Sequelize.STRING
-      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
