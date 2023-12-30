@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const userController = require('../controllers/userController');
-const { adminToken, verifiedToken } = require('../middlewares/authentication')
+const { adminToken } = require('../middlewares/authentication')
 const { uploadAvatar, uploadKTP } = require('../configs/multerConfig');
 const reservationController = require("../controllers/reservationController");
 
@@ -13,7 +13,7 @@ router.get('/', adminToken, userController.getAll);
 router.get('/filter', adminToken, userController.getByFilter);
 
 // Profile Routes for user-related actions
-router.get('/profile', verifiedToken, userController.getByToken);
+router.get('/profile', userController.getByToken);
 router.get('/profile/:id', adminToken, userController.getById);
 
 // Route to update a user's profile
