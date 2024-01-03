@@ -2,7 +2,6 @@ const { Vehicles, Reservations } = require('../../db/models');
 const { Op } = require('sequelize');
 const { crudController } = require('../utils/crud');
 const { handleError } = require('../middlewares/errorHandler');
-const { sequelize } = require('sequelize');
 
 const defaultPageLimit = 10;
 
