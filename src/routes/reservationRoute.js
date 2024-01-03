@@ -1,8 +1,36 @@
 const express = require('express');
 const router = express.Router();
-
-const { adminToken, verifiedToken } = require('../middleware/authentication')
+const { adminToken } = require('../middlewares/authentication')
 const reservationController = require("../controllers/reservationController");
 
+// Route to get all reservations listed
+router.get("/", adminToken, reservationController.getAll);
+
+// Route to get a reservation by ID
+router.get("/:id", adminToken, reservationController.getById);
+
+// Route to get a reservation by User ID
+router.get("/user/:id", adminToken, reservationController.getByUserId);
+
+// Route to get reservations by createdAt date range
+router.get("/date-range", adminToken, reservationController.getReservationsByDateRange);
+
+// Route to get reservations by vehicle ID
+router.get("/vehicle/:id", adminToken, reservationController.getByVehicleId);
+
+// Route to create a new reservation
+router.post("/", reservationController.create);
+
+// Route to update an reservation status by ID
+router.put("/status/:id", adminToken, reservationController.adminUpdateStatus);
+
+// Route to cancel an reservation by ID
+router.put("/cancel/:id", reservationController.userCancelStatus);
+
+// Route to update an reservation by ID
+router.put("/:id", adminToken, reservationController.update);
+
+// Route to delete an reservation by ID
+router.delete("/:id", adminToken, reservationController.delete);
 
 module.exports = router;
