@@ -25,7 +25,8 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       institution: {
-        type: Sequelize.ENUM('personal', 'company', 'organization', 'others')
+        type: Sequelize.ENUM('personal', 'company', 'organization', 'others'),
+        defaultValue: 'personal'
       },
       unit: {
         type: Sequelize.INTEGER
@@ -39,11 +40,16 @@ module.exports = {
         type: Sequelize.DATE
       },
       status: {
-        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'finished', 'cancelled')
+        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'finished', 'cancelled'),
+        defaultValue: 'pending'
+      },
+      totalPrice: {
+        type: Sequelize.INTEGER
       },
       finishedAt: {
-        allowNull: false,
-        type: Sequelize.DATE
+        allowNull: true,
+        type: Sequelize.DATE,
+        defaultValue: null
       },
       createdAt: {
         allowNull: false,

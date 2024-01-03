@@ -29,7 +29,8 @@ module.exports = {
         type: Sequelize.ENUM('admin', 'user')
       },
       gender: {
-        type: Sequelize.ENUM('male', 'female', 'other')
+        type: Sequelize.ENUM('male', 'female', 'other'),
+        defaultValue: 'other'
       },
       avatar: {
         type: Sequelize.STRING
@@ -44,7 +45,8 @@ module.exports = {
         type: Sequelize.STRING
       },
       isVerified: {
-        type: Sequelize.ENUM('yes', 'no')
+        type: Sequelize.ENUM('yes', 'no'),
+        defaultValue: 'no'
       },
       createdAt: {
         allowNull: false,

@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Users.hasMany(models.Reservations, {
         foreignKey: 'userId',
-        as: 'reservations',
+        as: 'Reservations',
       });
     }
   }

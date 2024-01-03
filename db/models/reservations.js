@@ -8,12 +8,12 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Reservations.belongsTo(models.Users, {
         foreignKey: 'userId',
-        as: 'user',
+        as: 'Users',
       });
 
       Reservations.belongsTo(models.Vehicles, {
         foreignKey: 'vehicleId',
-        as: 'vehicle',
+        as: 'Vehicles',
       });
     }
   }
@@ -29,6 +29,7 @@ module.exports = (sequelize, DataTypes) => {
     pickDate: DataTypes.DATE,
     dropDate: DataTypes.DATE,
     status: DataTypes.ENUM('pending', 'approved', 'rejected', 'finished', 'cancelled'),
+    totalPrice: DataTypes.INTEGER,
     finishedAt: DataTypes.DATE,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE
