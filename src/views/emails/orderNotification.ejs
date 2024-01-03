@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+        }
+        .logo {
+            max-width: 100px;
+        }
+        .content {
+            margin-top: 20px;
+        }
+        .reservation-details {
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://bangteg.github.io/images/dampit-trans-logo.png" alt="dampit-trans-logo" class="logo">
+            <h2>New Reservation</h2>
+        </div>
+        <div class="content">
+            <p>Hello Admin,</p>
+            <p>A new reservation has been made. Here are the details:</p>
+            <div class="reservation-details">
+                <p><strong>Reservation ID:</strong> <%= reservation.id %></p>
+                <p><strong>User:</strong> <%= user.firstName %> <%= user.lastName %></p>
+                <p><strong>Vehicle:</strong> <%= vehicle.name %></p>
+                <p><strong>Pick-up Location:</strong> <%= reservation.pickUp %></p>
+                <p><strong>Drop-off Location:</strong> <%= reservation.dropOff %></p>
+                <p><strong>Pick-up Date:</strong> <%= reservation.pickDate %></p>
+                <p><strong>Drop-off Date:</strong> <%= reservation.dropDate %></p>
+                <p><strong>Customer Contact:</strong> <%= user.contact %></p>
+            </div>
+            <p>Please make sure to check the details in the admin dashboard soon to make the arrangement with the customer, and change the reservation status after.</p>
+        </div>
+        <div class="footer">
+            <p>Thank you!</p>
+        </div>
+    </div>
+</body>
+</html>
