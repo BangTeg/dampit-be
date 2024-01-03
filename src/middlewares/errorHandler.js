@@ -1,71 +1,39 @@
 const { ValidationError } = require("sequelize");
 
-module.exports.handleError = (error, req, res, next) => {
-  try {
-    let statusCode = 500;
-    let errorMessage = 'Internal Server Error';
-    const additional = {};
+module.exports.handleError = (res, error) => {
+  console.error(error); // Log the error for debugging purposes
 
-    if (error instanceof ValidationError) {
-      statusCode = 422;
-      errorMessage = 'Unprocessable Entity';
-      additional.validationErrors = error.errors.map(validationError => ({
-        field: validationError.path,
-        message: validationError.message,
-      }));
-    } else if (error.name === 'SequelizeUniqueConstraintError') {
-      statusCode = 409;
-      errorMessage = 'Conflict';
-    } else if (error.name === 'UnauthorizedError') {
-      statusCode = 401;
-      errorMessage = 'Unauthorized';
-    } else if (error.name === 'NotFoundError') {
-      statusCode = 404;
-      errorMessage = 'Not Found';
-    } else if (error.name === 'BadRequestError') {
-      statusCode = 400;
-      errorMessage = error.errorMessage || 'Bad Request';
-    } else if (error.name === 'ForbiddenError') {
-      statusCode = 403;
-      errorMessage = error.errorMessage || 'Forbidden';
-    } else if (error.name === 'MulterError') {
-      statusCode = 400;
-      errorMessage = error.message || 'Multer Error';
-    } else if (error.name === 'JsonWebTokenError') {
-      statusCode = 401;
-      errorMessage = error.message || 'Invalid Token';
-    } else {
-      console.error('Unhandled error:', error);
-    }
+  // Determine the status code and response based on the error
+  let statusCode = 500;
+  let errorMessage = "Internal Server Error";
+  const additional = {};
 
-    // Check if the error object has a 'status' property
-    const status = error.status || statusCode;
-
-    return res.status(status).json({
-      code: status,
-      message: errorMessage,
-      error: error.message,
-      ...additional,
-    });
-  } catch (err) {
-    // Log and handle unexpected errors
-    console.error('An unexpected error occurred in the error handler:', err);
-    if (res) {
-      return res.status(statusCode).json({
-          code: statusCode,
-          message: errorMessage,
-          error: error.message,
-          ...additional,
-      });
-  } else {
-      // Handle the case where res is undefined (e.g., in case of unhandled promise rejection)
-      console.error(`Unhandled error: ${error.message}`);
-      return {
-          code: statusCode,
-          message: errorMessage,
-          error: error.message,
-          ...additional,
-      };
+  if (error instanceof ValidationError) {
+    // if (error.name === "ValidationError") {
+    // Handle validation errors from express-validator
+    statusCode = 400;
+    errorMessage = "Validation Error";
+    additional["errors"] = error.errors;
+  } else if (error.name === "SequelizeUniqueConstraintError") {
+    // Handle unique constraint violation errors (e.g., duplicate email)
+    statusCode = 400;
+    errorMessage = "Duplicate Entry";
+  } else if (error.name === "MulterError") {
+    // Handle Multer file upload errors
+    statusCode = 400;
+    errorMessage = "File Upload Error";
+  } else if (error.status) {
+    // Handle errors with a status code (e.g., from external libraries)
+    statusCode = error.status;
+    errorMessage = error.message;
   }
-  }
+
+  return res.status(statusCode).json({
+    code: statusCode,
+    status: errorMessage,
+    error: {
+      message: error.message,
+    },
+    ...additional,
+  });
 };
