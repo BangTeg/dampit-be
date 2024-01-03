@@ -150,7 +150,6 @@ module.exports = {
         isVerified: user.isVerified,
       });
     } catch (error) {
-      // logger.error(error);
       return handleError(error, req, res);
     }
   },
