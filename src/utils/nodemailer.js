@@ -37,12 +37,12 @@ const sendEmail = (mailOptions) => {
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.error("Error sending email:", error);
-        reject(error); // Reject the promise with the error
+        reject({ success: false, message: error.message });
       } else {
         console.log("Email sent:", info.response);
-        resolve(true); // Resolve the promise with a value (true in this case)
+        resolve({ success: true, message: info.response });
       }
-    });
+    });    
   });
 };
 
