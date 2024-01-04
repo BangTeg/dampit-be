@@ -308,6 +308,7 @@ module.exports = {
     userCancelStatus: async (req, res) => {
         try {
             const { id } = req.params;
+            const { userId: tokenUserId } = req.user;  // Extract userId from the token
 
             // Fetch reservation data
             const reservation = await Reservations.findByPk(id, {
@@ -320,6 +321,15 @@ module.exports = {
                     code: 404,
                     status: "Not Found",
                     message: "Reservation not found.",
+                });
+            }
+
+            // Check if the user has the correct permissions
+            if (tokenUserId !== reservation.userId) {
+                return res.status(403).json({
+                    code: 403,
+                    status: "Forbidden",
+                    message: "You don't have permission to cancel this reservation.",
                 });
             }
 
@@ -349,10 +359,10 @@ module.exports = {
                         reservation,
                     }),
                 });
-    
+
                 return emailerResult.success;
             });
-    
+
             // Wait for all email promises to resolve
             const emailResults = await Promise.allSettled(emailPromises);
 
