@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Status Update</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+        }
+        .logo {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .content {
+            padding: 20px;
+        }
+        .message {
+            margin-bottom: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img class="logo" src="https://bangteg.github.io/images/dampit-trans-logo.png" alt="Company Logo">
+            <h2>Reservation Status Update</h2>
+        </div>
+        <div class="content">
+            <p class="message">Dear <%= user.firstName %> <%= user.lastName %>,</p>
+            <p>Your reservation has been <strong>approved</strong> by the admin.</p>
+            <p>Reservation Details:</p>
+            <ul>
+                <li><strong>Reservation ID:</strong> <%= reservation.id %></li>
+                <li><strong>Pick-Up Date:</strong> <%= reservation.pickDate %></li>
+                <li><strong>Drop-Off Date:</strong> <%= reservation.dropDate %></li>
+                <li><strong>Pick-Up Location:</strong> <%= reservation.pickUp %></li>
+                <li><strong>Drop-Off Location:</strong> <%= reservation.dropOff %></li>
+                <li><strong>Vehicle:</strong> <%= vehicle.name %></li>
+                <li><strong>Total Price:</strong> <%= reservation.totalPrice %></li>
+                <li><strong>Unit:</strong> <%= reservation.unit %></li>
+                <li><strong>Passenger:</strong> <%= reservation.passengers %></li>
+            </ul>
+            <p>Thank you for choosing our service. If you have any questions, feel free to contact us.</p>
+        </div>
+        <div class="footer">
+            <p>This email is sent to <%= user.email %>. If you received this in error, please ignore it.</p>
+        </div>
+    </div>
+</body>
+</html>
