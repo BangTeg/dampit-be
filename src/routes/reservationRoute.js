@@ -13,7 +13,7 @@ router.get("/:id", adminToken, reservationController.getById);
 router.get("/user/:id", adminToken, reservationController.getByUserId);
 
 // Route to get reservations by createdAt date range
-router.get("/date-range", adminToken, reservationController.getReservationsByDateRange);
+router.get("/filter/date", adminToken, reservationController.getReservationsByDateRange);
 
 // Route to get reservations by vehicle ID
 router.get("/vehicle/:id", adminToken, reservationController.getByVehicleId);
