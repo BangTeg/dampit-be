@@ -26,11 +26,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// CONVENTIONS
-// AUTH EMAIL = password reset and email verification
-
 // Email Logics
-
 // send an email (sendMail wrapped in promise)
 const sendEmail = (mailOptions) => {
   return new Promise((resolve, reject) => {
