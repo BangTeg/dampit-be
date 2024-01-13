@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const router = Router();    
 const authRoute = require('./authRoute');
+const googleOAuthRoute = require('./googleOAuthRoute');
 const userRoute = require('./userRoute');
 const vehicleRoute = require('./vehicleRoute');
 const reservationRoute = require('./reservationRoute');
@@ -9,6 +10,9 @@ const {verifiedToken} = require('../middlewares/authentication');    // Import t
 
 // Route to the auth route
 router.use('/auth', authRoute);
+
+// Route to the google OAuth route
+router.use('/googleOAuth', googleOAuthRoute);
 
 // Route to the user router
 router.use('/user', verifiedToken, userRoute);

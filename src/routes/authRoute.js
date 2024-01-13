@@ -3,8 +3,6 @@ const authController = require('../controllers/authController');
 
 const router = express.Router();
 
-// require('../config/googleOAuth');
-
 // Route to login
 router.post('/login', authController.login);
 
