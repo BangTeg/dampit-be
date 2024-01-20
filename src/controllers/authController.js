@@ -166,6 +166,16 @@ module.exports = {
         return handleError(error, req, res);
       }
 
+      // Validate firstName and lastName
+      const nameRegex = /^[a-zA-Z]+$/;
+      if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
+        const error = {
+          status: 422,
+          message: 'Please enter a valid name without numbers or special characters',
+        };
+        return handleError(error, req, res);
+      }
+
       // Check if user exists by email
       const userExist = await Users.findOne({ where: { email } });
       if (userExist) {
@@ -219,6 +229,16 @@ module.exports = {
         const error = {
           status: 422,
           message: errors.array(),
+        };
+        return handleError(error, req, res);
+      }
+
+      // Validate firstName and lastName
+      const nameRegex = /^[a-zA-Z]+$/;
+      if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
+        const error = {
+          status: 422,
+          message: 'Please enter a valid name without numbers or special characters',
         };
         return handleError(error, req, res);
       }
