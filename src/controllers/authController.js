@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-const { FE_PORT } = process.env;
+const { FE_PORT, JWT_SECRET } = process.env;
 
 const { Users } = require('../../db/models');
 const userController = require('./userController');
@@ -20,8 +20,8 @@ const { v4: uuidv4 } = require('uuid');
 // Generate JWT token
 const generateAuthToken = (user) => {
   const { id, firstName, lastName, email, role } = user;
-  return jwt.sign({ id, firstName, lastName, email, role }, process.env.JWT_SECRET, {
-    expiresIn: 86400000, // TODO: move to config
+  return jwt.sign({ id, firstName, lastName, email, role }, JWT_SECRET, {
+    expiresIn: 86400000,
   });
 };
 
