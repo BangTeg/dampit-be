@@ -57,6 +57,16 @@ module.exports = {
         })(req, res);
     },
     
+    getReservationsByUserToken: async (req, res) => {
+        const { id } = req.user;
+        return await crudController.getAll(Reservations, {
+            where: { userId: id },
+            include: includeVehicle,
+            attributes,
+            paginated: true,
+        })(req, res);
+    },
+
     getReservationsByDateRange: async (req, res) => {
         try {
             const { startDate, endDate } = req.query;

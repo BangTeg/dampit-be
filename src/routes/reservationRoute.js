@@ -12,6 +12,9 @@ router.get("/:id", adminToken, reservationController.getById);
 // Route to get a reservation by User ID
 router.get("/user/:id", adminToken, reservationController.getByUserId);
 
+// Route to get reservations by User Token
+router.get("/token/user", reservationController.getReservationsByUserToken);
+
 // Route to get reservations by createdAt date range
 router.get("/filter/date", adminToken, reservationController.getReservationsByDateRange);
 
