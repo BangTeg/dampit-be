@@ -3,8 +3,7 @@ const router = express.Router();
 
 const userController = require('../controllers/userController');
 const { adminToken } = require('../middlewares/authentication')
-const { uploadAvatar, uploadKTP } = require('../configs/multerConfig');
-const reservationController = require("../controllers/reservationController");
+const { upload } = require('../utils/multer');
 
 // Route to get all users
 router.get('/', adminToken, userController.getAll);
@@ -19,36 +18,25 @@ router.get('/profile/:id', adminToken, userController.getById);
 // Route to update a user's profile
 router.put('/profile', userController.updateByToken);
 
-// // Route to get reservations by the user's token
-// router.get("/reservation/token", verifiedToken, reservationController.getReservationsByUserToken);
-
-// // Route to get reservations by UserID
-// router.get("/reservation/:id", adminToken, reservationController.getByUserId);
-
-// // Route for user to get reservations
-// router.get("/reservation/", reservationController.getByUserId);
-
 // Route to delete a user's and reservations by id
 router.delete('/:id', adminToken, userController.delete);
 
+// Route to upload avatar image to Google Cloud Storage and update the user's avatar URL in the database by token
+router.post('/avatar', upload.single('avatar'), userController.uploadAvatar);
 
-// // Uploading Routes for user-related actions
-// // Route to upload avatar
-// router.post('/avatar', verifiedToken, uploadAvatar.single('avatar'), userController.uploadAvatar);
+// Route to get a user's avatar by id
+router.get('/avatar/:id', adminToken, userController.getAvatarById);
 
-// // Route to get a user's avatar by id
-// router.get('/avatar/:id', adminToken, userController.getAvatarById);
+// Route to get a user's avatar by token
+router.get('/avatar', userController.getAvatar);
 
-// // Route to get a user's avatar by token
-// router.get('/avatar', verifiedToken, userController.getAvatar);
+// Route to upload KTP
+router.post('/ktp', upload.single('ktp'), userController.uploadKTP);
 
-// // Route to upload KTP
-// router.post('/ktp', verifiedToken, uploadCV.single('cv'), userController.uploadKTP);
+// Route to get a user's KTP by token
+router.get('/ktp', userController.getKTP);
 
-// // Route to get a user's KTP by token
-// router.get('/ktp', verifiedToken, userController.getKTP);
-
-// // Route to get a user's KTP by id
-// router.get('/ktp/:id', adminToken, userController.getKTPById);
+// Route to get a user's KTP by id
+router.get('/ktp/:id', adminToken, userController.getKTPById);
 
 module.exports = router;

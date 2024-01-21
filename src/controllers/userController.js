@@ -10,11 +10,10 @@ const {
 } = require('../../db/models');
 
 const bcrypt = require('bcrypt');
-// const path = require('path');
-// const fs = require('fs');
 const { handleError } = require('../middlewares/errorHandler');
 const { crudController } = require('../utils/crud');
 const { Op } = require('sequelize');
+const { uploadToStorage } = require('../utils/multer');
 
 const attributes = { exclude: ['password'] };
 
@@ -179,6 +178,206 @@ module.exports = {
       user.id,
       data
     )(req, res);
+  },
+
+  // Upload avatar image to Google Cloud Storage and update the user's avatar URL in the database by user token
+  uploadAvatar: async (req, res) => {
+    try {
+      const { file } = req;
+
+      if (!file) {
+        return res.status(400).json({
+          code: 400,
+          status: 'Bad Request',
+          message: 'No file uploaded',
+        });
+      }
+
+      // Upload the avatar to Google Cloud Storage
+      const avatarUrl = await uploadToStorage(req.file, uploadToStorage.avatarStorageBucket);
+
+      // Update the user's avatar URL in the database
+      const userId = req.params.id ?? req.user.id;
+      const user = await Users.findByPk(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          code: 404,
+          status: 'Not Found',
+          message: 'User not found',
+        });
+      }
+
+      user.avatar = avatarUrl;
+      await user.save();
+
+      return res.status(200).json({
+        code: 200,
+        status: 'OK',
+        message: 'Avatar uploaded successfully',
+        avatarUrl,
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
+  // Get a user's avatar by ID (accessible only by admin)
+  getAvatarById: async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const user = await Users.findByPk(userId, {
+        attributes: ['avatar'],
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          code: 404,
+          status: 'Not Found',
+          message: 'User not found',
+        });
+      }
+
+      const avatarUrl = user.avatar;
+
+      return res.status(200).json({
+        code: 200,
+        status: 'OK',
+        message: 'Avatar retrieved successfully',
+        avatarUrl,
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
+  // Get a user's avatar by token
+  getAvatar: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await Users.findByPk(userId, {
+        attributes: ['avatar'],
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          code: 404,
+          status: 'Not Found',
+          message: 'User not found',
+        });
+      }
+
+      const avatarUrl = user.avatar;
+
+      return res.status(200).json({
+        code: 200,
+        status: 'OK',
+        message: 'Avatar retrieved successfully',
+        avatarUrl,
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
+  // Upload KTP to Google Cloud Storage and update the user's KTP URL in the database by user token
+  uploadKTP: async (req, res) => {
+    try {
+      const { file } = req;
+
+      if (!file) {
+        return res.status(400).json({
+          code: 400,
+          status: 'Bad Request',
+          message: 'No file uploaded',
+        });
+      }
+
+      // Upload the KTP to Google Cloud Storage
+      const ktpUrl = await uploadToStorage(req.file, uploadToStorage.ktpStorageBucket);
+
+      // Update the user's KTP URL in the database
+      const userId = req.user.id;
+      const user = await Users.findByPk(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          code: 404,
+          status: 'Not Found',
+          message: 'User not found',
+        });
+      }
+
+      user.ktp = ktpUrl;
+      await user.save();
+
+      return res.status(200).json({
+        code: 200,
+        status: 'OK',
+        message: 'KTP uploaded successfully',
+        ktpUrl,
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
+  // Get a user's KTP by ID (accessible only by admin)
+  getKTPById: async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const user = await Users.findByPk(userId, {
+        attributes: ['ktp'],
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          code: 404,
+          status: 'Not Found',
+          message: 'User not found',
+        });
+      }
+
+      const ktpUrl = user.ktp;
+
+      return res.status(200).json({
+        code: 200,
+        status: 'OK',
+        message: 'KTP retrieved successfully',
+        ktpUrl,
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
+  // Get a user's KTP by token
+  getKTP: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await Users.findByPk(userId, {
+        attributes: ['ktp'],
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          code: 404,
+          status: 'Not Found',
+          message: 'User not found',
+        });
+      }
+
+      const ktpUrl = user.ktp;
+
+      return res.status(200).json({
+        code: 200,
+        status: 'OK',
+        message: 'KTP retrieved successfully',
+        ktpUrl,
+      });
+    } catch (err) {
+      return handleError(res, err);
+    }
   },
 
   // Delete a user's and reservations by ID
