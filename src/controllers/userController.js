@@ -46,10 +46,9 @@ module.exports = {
       });
 
       if (!userData) {
-        return res.status(404).json({
-          code: 404,
-          status: "Not Found",
-          message: "User not found",
+        return handleError(res, {
+          status: 404,
+          message: 'User not found',
         });
       }
 
@@ -79,27 +78,24 @@ module.exports = {
 
       // Validate page and limit parameters
       if (isNaN(parsedPage) || parsedPage < 1) {
-        return res.status(400).json({
-          code: 400,
-          status: 'Bad Request',
+        return handleError(res, {
+          status: 400,
           message: 'Invalid page parameter. Must be a positive integer.',
         });
       }
 
       if (isNaN(parsedLimit) || parsedLimit < 1) {
-        return res.status(400).json({
-          code: 400,
-          status: 'Bad Request',
+        return handleError(res, {
+          status: 400,
           message: 'Invalid limit parameter. Must be a positive integer.',
         });
       }
 
       // Validate date parameters
       if (parsedStartDate && parsedEndDate && parsedStartDate > parsedEndDate) {
-        return res.status(400).json({
-          code: 400,
-          status: 'Bad Request',
-          message: 'Invalid date range. startDate must be before or equal to endDate.',
+        return handleError(res, {
+          status: 400,
+          message: 'Invalid date parameters. Start date must be before or equals to end date.',
         });
       }
 
@@ -131,9 +127,8 @@ module.exports = {
     // const id = req.params.id; // Use the ID from the route parameter
     if (req.user.role !== "admin")
       if (id != req.user.id) {
-        return res.status(403).json({
-          code: 403,
-          status: "Forbidden",
+        return handleError(res, {
+          status: 403,
           message: "You do not have permission to edit other's profile.",
         });
       }
@@ -157,9 +152,8 @@ module.exports = {
 
     // Check if the user is trying to update other's profile
     if (data.id && data.id != user.id) {
-      return res.status(403).json({
-        code: 403,
-        status: "Forbidden",
+      return handleError(res, {
+        status: 403,
         message: "You do not have permission to edit other's profile.",
       });
     }
@@ -186,9 +180,8 @@ module.exports = {
       const { file } = req;
 
       if (!file) {
-        return res.status(400).json({
-          code: 400,
-          status: 'Bad Request',
+        return handleError(res, {
+          status: 400,
           message: 'No file uploaded',
         });
       }
@@ -201,9 +194,8 @@ module.exports = {
       const user = await Users.findByPk(userId);
 
       if (!user) {
-        return res.status(404).json({
-          code: 404,
-          status: 'Not Found',
+        return handleError(res, {
+          status: 404,
           message: 'User not found',
         });
       }
@@ -231,9 +223,8 @@ module.exports = {
       });
 
       if (!user) {
-        return res.status(404).json({
-          code: 404,
-          status: 'Not Found',
+        return handleError(res, {
+          status: 404,
           message: 'User not found',
         });
       }
@@ -260,9 +251,8 @@ module.exports = {
       });
 
       if (!user) {
-        return res.status(404).json({
-          code: 404,
-          status: 'Not Found',
+        return handleError(res, {
+          status: 404,
           message: 'User not found',
         });
       }
@@ -286,9 +276,8 @@ module.exports = {
       const { file } = req;
 
       if (!file) {
-        return res.status(400).json({
-          code: 400,
-          status: 'Bad Request',
+        return handleError(res, {
+          status: 400,
           message: 'No file uploaded',
         });
       }
@@ -301,9 +290,8 @@ module.exports = {
       const user = await Users.findByPk(userId);
 
       if (!user) {
-        return res.status(404).json({
-          code: 404,
-          status: 'Not Found',
+        return handleError(res, {
+          status: 404,
           message: 'User not found',
         });
       }
@@ -331,9 +319,8 @@ module.exports = {
       });
 
       if (!user) {
-        return res.status(404).json({
-          code: 404,
-          status: 'Not Found',
+        return handleError(res, {
+          status: 404,
           message: 'User not found',
         });
       }
@@ -360,9 +347,8 @@ module.exports = {
       });
 
       if (!user) {
-        return res.status(404).json({
-          code: 404,
-          status: 'Not Found',
+        return handleError(res, {
+          status: 404,
           message: 'User not found',
         });
       }
@@ -387,19 +373,21 @@ module.exports = {
       const user = await Users.findByPk(id);
 
       if (!user) {
-        return res.status(404).json({
-          code: 404,
-          status: "Not Found",
-          message: "User not found",
+        return handleError(res, {
+          status: 404,
+          message: 'User not found',
         });
       }
 
-      // // Remove the user's avatar file if it exists in Google Cloud Storage
-      // 
+      // Remove the user's avatar file if it exists in Google Cloud Storage
+      if (user.avatar) {
+        await uploadToStorage.deleteFile(user.avatar, uploadToStorage.avatarStorageBucket);
+      }
 
-
-      // // Remove the user's KTP file if it exists in Google Cloud Storage
-      // 
+      // Remove the user's KTP file if it exists in Google Cloud Storage
+      if (user.ktp) {
+        await uploadToStorage.deleteFile(user.ktp, uploadToStorage.ktpStorageBucket);
+      }
 
       // Get reservations associated with the user
       const reservations = await Reservations.findAll({ where: { UserId: id } });

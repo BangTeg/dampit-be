@@ -73,7 +73,10 @@ module.exports = {
 
             // Check if startDate and endDate are provided
             if (!startDate || !endDate) {
-                return res.status(400).json({ message: 'Both startDate and endDate are required.' });
+                return handleError (res, {
+                    status: 400,
+                    message: "Please provide 'startDate' and 'endDate' query parameters.",
+                });
             }
 
             // Convert startDate and endDate to Date objects
@@ -82,12 +85,18 @@ module.exports = {
 
             // Check if startDate is before or equal to endDate
             if (startDateObj > endDateObj) {
-                return res.status(400).json({ message: 'startDate must be before or equal to endDate.' });
+                return handleError (res, {
+                    status: 400,
+                    message: "'startDate' must be before or equal to 'endDate'.",
+                });
             }
 
             // Additional validation for valid date values
             if (isNaN(startDateObj) || isNaN(endDateObj)) {
-                return res.status(400).json({ message: 'Invalid date format for startDate or endDate.' });
+                return handleError (res, {
+                    status: 400,
+                    message: "Please provide valid 'startDate' and 'endDate' query parameters.",
+                });
             }
 
             const { page, limit } = req.query;
@@ -142,13 +151,19 @@ module.exports = {
 
             // Validate userId and vehicleId parameters
             if (!userId || !vehicleId) {
-                return res.status(400).json({ code: 400, status: "Bad Request", message: "Please provide a valid 'userId' and 'vehicleId' parameter." });
+                return handleError(res, {
+                    status: 400,
+                    message: "Please provide valid 'userId' and 'vehicleId' parameters.",
+                });
             }
 
             // Validate other parameters
             const requiredParams = ['pickUp', 'dropOff', 'passengers', 'institution', 'unit', 'pickDate', 'dropDate'];
             if (requiredParams.some(param => !req.body[param])) {
-                return res.status(400).json({ code: 400, status: "Bad Request", message: `Please provide valid values for ${requiredParams.join(', ')} parameters.` });
+                return handleError(res, {
+                    status: 400,
+                    message: `Please provide valid '${requiredParams.join("', '")}' parameters.`,
+                });
             }
 
             // Fetch vehicle data
@@ -193,7 +208,7 @@ module.exports = {
 
             return res.status(200).json({ code: 200, status: "OK", message: "Success creating reservation and sending notification emails.", data: reservation });
         } catch (error) {
-            console.error("Error in reservation creation:", error);  // Log the specific error
+            console.error("Error in reservation creation:", error);
             return handleError(res, error);
         }
     },
@@ -204,7 +219,10 @@ module.exports = {
 
             // Validate status parameter
             if (!status || !['approved', 'rejected', 'finished'].includes(status)) {
-                return res.status(400).json({ code: 400, status: "Bad Request", message: "Please provide a valid 'status' parameter ('approved', 'rejected', or 'finished')." });
+                return handleError(res, {
+                    status: 400,
+                    message: "Please provide valid 'status' parameter.",
+                });
             }
 
             // Fetch reservation data
@@ -212,7 +230,10 @@ module.exports = {
 
             // Check if reservation exists
             if (!reservation) {
-                return res.status(404).json({ code: 404, status: "Not Found", message: "Reservation not found." });
+                return handleError(res, {
+                    status: 404,
+                    message: "Reservation not found.",
+                });
             }
 
             // Update reservation status
@@ -232,7 +253,10 @@ module.exports = {
             // Check if the email sending was successful
             if (!emailerResult.success) {
                 console.error("Error sending email notification");
-                return res.status(500).json({ code: 500, status: "Internal Server Error", message: "Failed sending notification email." });
+                return handleError(res, {
+                    status: 500,
+                    message: "Failed updating reservation status and sending notification email.",
+                });
             }
 
             return res.status(200).json({
@@ -256,12 +280,18 @@ module.exports = {
 
             // Check if reservation exists
             if (!reservation) {
-                return res.status(404).json({ code: 404, status: "Not Found", message: "Reservation not found." });
+                return handleError(res, {
+                    status: 404,
+                    message: "Reservation not found.",
+                });
             }
 
             // Check if the user has the correct permissions
             if (tokenUserId !== reservation.userId) {
-                return res.status(403).json({ code: 403, status: "Forbidden", message: "You don't have permission to cancel this reservation." });
+                return handleError(res, {
+                    status: 403,
+                    message: "You are not authorized to cancel this reservation.",
+                });
             }
 
             // Update reservation status
@@ -292,8 +322,12 @@ module.exports = {
             if (emailResults.some((result) => result.status === 'rejected')) {
                 const failedEmailPromises = emailResults.filter((result) => result.status === 'rejected');
                 console.error("Error sending email notifications");
-                console.error("Failed Email Promises:", failedEmailPromises);  // Log failed email promises for debugging
-                return res.status(500).json({ code: 500, status: "Internal Server Error", message: "Failed updating reservation status and sending notification emails." });
+                console.error("Failed Email Promises:", failedEmailPromises);
+
+                return handleError(res, {
+                    status: 500,
+                    message: "Failed updating reservation status and sending notification emails.",
+                });
             }
 
             // Log success message

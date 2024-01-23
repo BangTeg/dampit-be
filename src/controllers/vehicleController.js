@@ -21,10 +21,9 @@ module.exports = {
 
             // Validate name parameter
             if (!name) {
-                return res.status(400).json({
-                    code: 400,
-                    status: "Bad Request",
-                    message: "Please provide a valid 'name' parameter.",
+                return handleError(res, {
+                    status: 400,
+                    message: 'Name parameter is required',
                 });
             }
 
