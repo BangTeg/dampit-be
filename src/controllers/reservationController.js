@@ -358,7 +358,9 @@ module.exports = {
         }
     },
 
-    update: crudController.update(Reservations, { include }),
+    update: crudController.update(Reservations, {
+        include,
+    }),
 
     delete: crudController.delete(Reservations),
 };
