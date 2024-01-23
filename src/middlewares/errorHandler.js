@@ -30,10 +30,7 @@ module.exports.handleError = (res, error) => {
 
   return res.status(statusCode).json({
     code: statusCode,
-    status: errorMessage,
-    error: {
-      message: error.message,
-    },
+    error: errorMessage,
     ...additional,
   });
 };
