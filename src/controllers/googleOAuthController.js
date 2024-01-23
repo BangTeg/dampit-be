@@ -11,6 +11,25 @@ const generateAuthToken = (user) => {
     });
 };
 
+// Function to generate a unique username
+const generateUniqueUsername = async (firstName, lastName) => {
+    let username = `Dampit User ${firstName}${lastName.charAt(0)}`;
+    let isUnique = false;
+    let counter = 1;
+
+    while (!isUnique) {
+        const existingUser = await Users.findOne({ where: { username } });
+        if (!existingUser) {
+            isUnique = true;
+        } else {
+            counter++;
+            username = `Dampit User ${firstName}${lastName.charAt(0)} ${counter}`;
+        }
+    }
+
+    return username;
+};
+
 module.exports = {
     // Endpoint google login
     googleLogin: passport.authenticate('google', {
@@ -35,6 +54,13 @@ module.exports = {
                 where: { email },
                 defaults: { firstName, lastName, email, avatar, role: 'user', isVerified: 'yes' },
             });
+
+            // Generate a unique username if the user doesn't have one
+            if (!user.username) {
+                const username = await generateUniqueUsername(firstName, lastName);
+                user.username = username;
+                await user.save();
+            }
     
             console.log(isCreated);
             const token = generateAuthToken(user);
