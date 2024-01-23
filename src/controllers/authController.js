@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-const { FE_PORT, JWT_SECRET } = process.env;
+const { JWT_SECRET } = process.env;
 
 const { Users } = require('../../db/models');
 const userController = require('./userController');
@@ -9,19 +9,19 @@ const { sendAuthEmail, verifyAndInvalidateLastToken } = require('../utils/nodema
 const { handleError } = require('../middlewares/errorHandler');
 const { validationResult } = require('express-validator');
 const { crudController } = require('../utils/crud');
+const { v4: uuidv4 } = require('uuid');
+const { Op } = require('sequelize');
 
 const fs = require('fs');
-
 const ejs = require('ejs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid');
 
 // Generate JWT token
 const generateAuthToken = (user) => {
   const { id, firstName, lastName, email, role } = user;
   return jwt.sign({ id, firstName, lastName, email, role }, JWT_SECRET, {
-    expiresIn: 86400000,
+    expiresIn: 86400000, // TODO: move to config
   });
 };
 
@@ -68,8 +68,6 @@ const sendVerifyEmail = async (req, res, email, firstName, token) => {
 
 // Send password reset email
 const sendResetEmail = async (req, res, email, firstName, token) => {
-  // const hostUrl = FE_PORT;
-  // const { email } = req.body;
   const hostUrl = `${req.protocol}://${req.get("host")}`;
   const user = await Users.findOne({
     where: { email },
@@ -96,28 +94,26 @@ const sendResetEmail = async (req, res, email, firstName, token) => {
 };
 
 module.exports = {
-  // login: async (req, res, next) => {
-  login: async (req, res, next) => {
+  login: async (req, res) => {
     try {
       // Check if user exists by email
       const { email, password } = req.body;
       const user = await Users.findOne({ where: { email } });
 
+      // If user doesn't exist by email or username
       if (!user) {
-        const error = {
+        return handleError(res, {
           status: 401,
-          message: 'User not found',
-        };
-        return handleError(error, req, res);
+          message: 'Email not found',
+        });
       }
 
       // Check if the user is verified
       if (user.isVerified === 'no') {
-        const error = {
-          status: 403,
-          message: 'Email not verified. Please verify your email before logging in.',
-        };
-        return handleError(error, req, res);
+        return handleError(res, {
+          status: 401,
+          message: 'Email is not verified',
+        });
       }
 
       // Check if password matches
@@ -125,11 +121,10 @@ module.exports = {
 
       // If password doesn't match
       if (!isMatch) {
-        const error = {
+        return handleError(res, {
           status: 401,
-          message: 'Wrong password, try again',
-        };
-        return handleError(error, req, res);
+          message: 'Password incorrect',
+        });
       }
 
       const token = generateAuthToken(user);
@@ -159,41 +154,36 @@ module.exports = {
       const { username, firstName, lastName, email, password } = req.body;
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        const error = {
+        return handleError (res, {
           status: 422,
           message: errors.array(),
-        };
-        return handleError(error, req, res);
+        });
       }
 
-      // Validate firstName and lastName
-      const nameRegex = /^[a-zA-Z]+$/;
-      if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-        const error = {
+      // Prevent user from registering firstName and lastName with numbers or special characters
+      if (firstName.match(/[^a-zA-Z\s]/g) || lastName.match(/[^a-zA-Z\s]/g)) {
+        return handleError (res, {
           status: 422,
-          message: 'Please enter a valid name without numbers or special characters',
-        };
-        return handleError(error, req, res);
+          message: 'First name and last name must not contain numbers or special characters',
+        });
       }
 
       // Check if user exists by email
       const userExist = await Users.findOne({ where: { email } });
       if (userExist) {
-        const error = {
+        return handleError (res, {
           status: 409,
           message: 'Email already exists',
-        };
-        return handleError(error, req, res);
+        });
       }
 
       // Check if user exists by username
       const usernameExist = await Users.findOne({ where: { username } });
       if (usernameExist) {
-        const error = {
+        return handleError (res, {
           status: 409,
           message: 'Username already exists',
-        };
-        return handleError(error, req, res);
+        });
       }
 
       // Hash password
@@ -217,7 +207,7 @@ module.exports = {
       // Send email verification
       return await sendVerifyEmail(req, res, email, firstName);
     } catch (error) {
-      return handleError(error, req, res);
+      return handleError(res, error);
     }
   },
 
@@ -226,41 +216,28 @@ module.exports = {
       const { username, firstName, lastName, email, password } = req.body;
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        const error = {
+        return handleError (res, {
           status: 422,
           message: errors.array(),
-        };
-        return handleError(error, req, res);
-      }
-
-      // Validate firstName and lastName
-      const nameRegex = /^[a-zA-Z]+$/;
-      if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-        const error = {
-          status: 422,
-          message: 'Please enter a valid name without numbers or special characters',
-        };
-        return handleError(error, req, res);
+        });
       }
 
       // Check if user exists by email
       const userExist = await Users.findOne({ where: { email } });
       if (userExist) {
-        const error = {
+        return handleError (res, {
           status: 409,
           message: 'Email already exists',
-        };
-        return handleError(error, req, res);
+        });
       }
 
       // Check if user exists by username
       const usernameExist = await Users.findOne({ where: { username } });
       if (usernameExist) {
-        const error = {
+        return handleError (res, {
           status: 409,
           message: 'Username already exists',
-        };
-        return handleError(error, req, res);
+        });
       }
 
       // Hash password
@@ -300,16 +277,15 @@ module.exports = {
     if (token) {
       try {
         // Verify and decode token
-        const decodedToken = await jwt.verify(token, process.env.JWT_SECRET);
+        const decodedToken = await jwt.verify(token, JWT_SECRET);
         const { id, email } = decodedToken;
   
         // Verify token using token store
         if (!verifyAndInvalidateLastToken(email, token)) {
-          const error = {
+          return handleError(res, {
             status: 401,
-            message: 'Token expired',
-          };
-          return handleError(error, req, res);
+            message: 'Invalid token',
+          });
         }
   
         const { password } = req.body;
@@ -335,15 +311,14 @@ module.exports = {
       const { token } = req.params;
   
       // Verify and decode token
-      const decodedToken = await jwt.verify(token, process.env.JWT_SECRET);
+      const decodedToken = await jwt.verify(token, JWT_SECRET);
       
       // Ensure the decoded token is an object with an email property
       if (!decodedToken || !decodedToken.email) {
-        const error = {
-          status: 400,
-          message: 'Invalid token format',
-        };
-        return handleError(error, req, res);
+        return handleError(res, {
+          status: 401,
+          message: 'Invalid token',
+        });
       }
   
       const email = decodedToken.email;
@@ -351,11 +326,10 @@ module.exports = {
       // Check if the user is already verified
       const user = await Users.findOne({ where: { email } });
       if (!user) {
-        const error = {
+        return handleError(res, {
           status: 404,
           message: 'User not found',
-        };
-        return handleError(error, req, res);
+        });
       }
   
       if (user.isVerified === 'yes') {
@@ -374,5 +348,4 @@ module.exports = {
       return handleError(error, req, res);
     }
   }
-  
 };
