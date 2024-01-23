@@ -6,7 +6,7 @@ const userRoute = require('./userRoute');
 const vehicleRoute = require('./vehicleRoute');
 const reservationRoute = require('./reservationRoute');
 
-const {verifiedToken} = require('../middlewares/authentication');    // Import the verifiedToken middleware
+const { verifiedToken } = require('../middlewares/authentication');
 
 // Route to the auth route
 router.use('/auth', authRoute);
