@@ -1,3 +1,6 @@
+require('dotenv').config();
+
+const { JWT_SECRET } = process.env;
 const passport = require('../configs/passport');
 const jwt = require('jsonwebtoken');
 const { Users } = require('../../db/models');
@@ -6,7 +9,7 @@ const { handleError } = require('../middlewares/errorHandler');
 // Function to generate JWT token
 const generateAuthToken = (user) => {
     const { firstName, lastName, email, avatar, role, isVerified } = user;
-    return jwt.sign({ firstName, lastName, email, avatar, role, isVerified }, process.env.JWT_SECRET, {
+    return jwt.sign({ firstName, lastName, email, avatar, role, isVerified }, JWT_SECRET, {
         expiresIn: "1d",
     });
 };
@@ -78,7 +81,10 @@ module.exports = {
     // Endpoint called when Google authentication fails
     googleFailure: (req, res) => {
         console.error('Google authentication failed:', req.query.error);
-        res.status(401).send('Failed to login');
+        return handleError(res, {
+            status: 400,
+            message: 'Google authentication failed',
+        });
     },
 
     // Test endpoint for authentication with Google
