@@ -12,13 +12,13 @@ const attributes = ["id", "pickUp", "dropOff", "passengers", "institution", "uni
 const includeUser = {
     model: Users,
     as: 'Users',
-    attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "ktp"],
+    attributes: ["id", "username", "firstName", "lastName", "email", "role", "gender", "avatar", "address", "contact", "ktp"],
 };
 
 const includeVehicle = {
     model: Vehicles,
     as: 'Vehicles',
-    attributes: ["id", "name", "price", "capacity"],
+    attributes: ["id", "name", "price", "capacity", "overtime"],
 };
 
 const include = [includeUser, includeVehicle];
@@ -51,7 +51,7 @@ module.exports = {
         const { id } = req.params;
         return await crudController.getAll(Reservations, {
             where: { userId: id },
-            include: includeVehicle,
+            include,
             attributes,
             paginated: true,
         })(req, res);
@@ -61,7 +61,7 @@ module.exports = {
         const { id } = req.user;
         return await crudController.getAll(Reservations, {
             where: { userId: id },
-            include: includeVehicle,
+            include,
             attributes,
             paginated: true,
         })(req, res);
@@ -138,7 +138,7 @@ module.exports = {
         const { id } = req.params;
         return await crudController.getAll(Reservations, {
             where: { vehicleId: id },
-            include: includeUser,
+            include,
             attributes,
             paginated: true,
         })(req, res);
@@ -236,8 +236,21 @@ module.exports = {
                 });
             }
 
+            // Check if the reservation status is already not 'pending'
+            if (reservation.status !== 'pending') {
+                return handleError(res, {
+                    status: 400,
+                    message: "Reservation status cannot be updated because it is not in 'pending' status.",
+                });
+            }
+
             // Update reservation status
             await Reservations.update({ status }, { where: { id } });
+
+            // Update finishedAt field if status is 'finished'
+            if (status === 'finished') {
+                await Reservations.update({ finishedAt: new Date() }, { where: { id } });
+            }
 
             // Fetch user data
             const user = await Users.findByPk(reservation.userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role"] });
