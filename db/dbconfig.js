@@ -20,6 +20,7 @@ module.exports = {
     "host": DB_HOST,
     "port": DB_PORT,
     "dialect": DB_DIALECT,
+    "timezone": "+07:00", // Set timezone to Jakarta time.
     "pool": {
       "max": 5,
       "min": 0,
@@ -34,6 +35,7 @@ module.exports = {
     "host": DB_HOST,
     "port": DB_PORT,
     "dialect": DB_DIALECT,
+    "timezone": "+07:00", // Set timezone to Jakarta time.
     "pool": {
       "max": 5,
       "min": 0,
@@ -48,6 +50,7 @@ module.exports = {
     "host": DB_HOST,
     "port": DB_PORT,
     "dialect": DB_DIALECT,
+    "timezone": "+07:00", // Set timezone to Jakarta time.
     "pool": {
       "max": 5,
       "min": 0,
