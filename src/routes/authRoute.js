@@ -15,11 +15,12 @@ router.post('/adminRegister', authController.adminRegister);
 // Route to logout
 router.post('/logout', authController.logout);
 
-// // Route to reset password
-// router.post('/reset', authController.resetPassword);
-// router.post("/reset/:token", authController.resetPassword);
+// Route to reset password
+router.post('/reset', authController.initiateResetPassword);
+
+router.post("/reset/:token", authController.verifyResetPasswordEmail);
 
 // Route to verify email
-router.get("/verify/:token", authController.verifyEmail);
+router.get("/verify/:token", authController.verifyRegisterEmail);
 
 module.exports = router;

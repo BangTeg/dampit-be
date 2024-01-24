@@ -5,12 +5,10 @@ const { JWT_SECRET } = process.env;
 const { Users } = require('../../db/models');
 const userController = require('./userController');
 
-const { sendAuthEmail, verifyAndInvalidateLastToken } = require('../utils/nodemailer');
+const { sendAuthEmail } = require('../utils/nodemailer');
 const { handleError } = require('../middlewares/errorHandler');
 const { validationResult } = require('express-validator');
-const { crudController } = require('../utils/crud');
 const { v4: uuidv4 } = require('uuid');
-const { Op } = require('sequelize');
 
 const fs = require('fs');
 const ejs = require('ejs');
@@ -59,7 +57,10 @@ const sendVerifyEmail = async (req, res, email, firstName, token) => {
   const hostUrl = `${req.protocol}://${req.get("host")}`;
   try {
     await sendAuthEmail(req, res, "Verification", email, firstName, hostUrl, getVerifyEmailText, token);
-    return res.status(200).json({ success: true, message: 'Email verification sent successfully' });
+    return res.status(200).json({
+      success: true,
+      message: 'Email verification sent successfully'
+    });
   } catch (error) {
     console.error('Error sending email:', error);
     return res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -270,43 +271,94 @@ module.exports = {
     return res.status(200).json({ message: 'Logout success' });
   },
 
-  resetPassword: async (req, res) => {
-    const { token } = req.params;
-    console.log(token);
-  
-    if (token) {
-      try {
-        // Verify and decode token
-        const decodedToken = await jwt.verify(token, JWT_SECRET);
-        const { id, email } = decodedToken;
-  
-        // Verify token using token store
-        if (!verifyAndInvalidateLastToken(email, token)) {
-          return handleError(res, {
-            status: 401,
-            message: 'Invalid token',
-          });
-        }
-  
-        const { password } = req.body;
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-  
-        // Update password
-        return await crudController.update(
-          Users,
-          { attributes: userController.attributes },
-          Number(id),
-          { password: hashedPassword }
-        )(req, res);
-      } catch (error) {
-        // logger.error(error);
-        return handleError(error, req, res);
+  initiateResetPassword: async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      // Check if user exists by email
+      const user = await Users.findOne({ where: { email } });
+
+      if (!user) {
+        return handleError(res, {
+          status: 404,
+          message: 'User not found',
+        });
       }
+
+      // Generate reset token with user's email encoded
+      const resetToken = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '15m' });
+
+      // Send password reset email
+      await sendResetEmail(req, res, email, user.firstName, resetToken);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Password reset email sent successfully',
+      });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  },  
+
+  verifyResetPasswordEmail: async (req, res) => {
+    try {
+      const { token } = req.params;
+      console.log('Token to verify:', token);
+
+      // Verify and decode token
+      const decodedToken = await jwt.verify(token, JWT_SECRET);
+
+      // Ensure the decoded token is an object with an email property
+      if (!decodedToken || !decodedToken.email) {
+        return handleError(res, {
+          status: 401,
+          message: 'Invalid token',
+        });
+      }
+
+      // Extract email from the decoded token
+      const email = decodedToken.email;
+
+      // Find user with the provided email
+      const user = await Users.findOne({ where: { email } });
+
+      // If user doesn't exist
+      if (!user) {
+        return handleError(res, {
+          status: 401,
+          message: 'User not found',
+        });
+      }
+
+      // Check if newPassword is provided in the request body
+      const { newPassword } = req.body;
+      if (!newPassword) {
+        return handleError(res, {
+          status: 400,
+          message: 'New password is required',
+        });
+      }
+
+      // Reset the user's password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+      // Update the user's password
+      await Users.update(
+        { password: hashedPassword },
+        { where: { id: user.id } }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Password reset successful',
+      });
+    } catch (error) {
+      return handleError(res, error);
     }
   },
 
-  verifyEmail : async (req, res) => {
+  verifyRegisterEmail : async (req, res) => {
     try {
       const { token } = req.params;
   
