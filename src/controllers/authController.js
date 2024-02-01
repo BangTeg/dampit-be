@@ -162,7 +162,7 @@ module.exports = {
       }
 
       // Prevent user from registering firstName and lastName with numbers or special characters
-      if (firstName.match(/[^a-zA-Z\s]/g) || lastName.match(/[^a-zA-Z\s]/g)) {
+      if (firstName.match(/[^a-zA-Z\s']/g) || lastName.match(/[^a-zA-Z\s']/g)) {
         return handleError (res, {
           status: 422,
           message: 'First name and last name must not contain numbers or special characters',
@@ -223,6 +223,14 @@ module.exports = {
         });
       }
 
+      // Prevent user from registering firstName and lastName with numbers or special characters
+      if (firstName.match(/[^a-zA-Z\s']/g) || lastName.match(/[^a-zA-Z\s']/g)) {
+        return handleError (res, {
+          status: 422,
+          message: 'First name and last name must not contain numbers or special characters',
+        });
+      }
+
       // Check if user exists by email
       const userExist = await Users.findOne({ where: { email } });
       if (userExist) {
@@ -267,8 +275,12 @@ module.exports = {
   },
 
   logout: async (req, res) => {
-    req.logout();
-    return res.status(200).json({ message: 'Logout success' });
+    if (req.isAuthenticated()) {
+      req.logout();
+      return res.status(200).json({ message: 'Logout success' });
+    } else {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
   },
 
   initiateResetPassword: async (req, res) => {
