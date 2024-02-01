@@ -1,10 +1,6 @@
 require('dotenv').config();
 
 const {
-  BE_PORT
-} = process.env;
-
-const {
   Users,
   Reservations
 } = require('../../db/models');
@@ -13,7 +9,7 @@ const bcrypt = require('bcrypt');
 const { handleError } = require('../middlewares/errorHandler');
 const { crudController } = require('../utils/crud');
 const { Op } = require('sequelize');
-const { uploadToStorage } = require('../utils/multer');
+const { uploadToAvatarStorage, uploadToKTPStorage } = require('../utils/multer');
 
 const attributes = { exclude: ['password'] };
 
@@ -145,7 +141,7 @@ module.exports = {
     )(req, res);
   },
 
-  // Route to update a user's profile by token
+  // Update a user's profile by token
   updateByToken: async (req, res) => {
     const { user } = req;
     const data = req.body;
@@ -165,6 +161,21 @@ module.exports = {
       data.password = await bcrypt.hash(data.password, salt);
     }
 
+    // Validate firstName and lastName
+    if (data.firstName && !/^[a-zA-Z\s']+$/.test(data.firstName)) {
+      return handleError(res, {
+        status: 400,
+        message: 'Invalid firstName. Only alphabetic characters are allowed.',
+      });
+    }
+
+    if (data.lastName && !/^[a-zA-Z\s']+$/.test(data.lastName)) {
+      return handleError(res, {
+        status: 400,
+        message: 'Invalid lastName. Only alphabetic characters are allowed.',
+      });
+    }
+
     // Update the user's profile
     return await crudController.update(
       Users,
@@ -182,15 +193,24 @@ module.exports = {
       if (!file) {
         return handleError(res, {
           status: 400,
-          message: 'No file uploaded',
+          message: 'No Avatar Uploaded',
+        });
+      }
+
+      // Check file format (mimetype)
+      const allowedFormats = ['image/jpeg', 'image/png', 'image/jpg', 'image/svg'];
+      if (!allowedFormats.includes(file.mimetype)) {
+        return handleError(res, {
+          status: 400,
+          message: 'Invalid file format. Only JPEG, PNG, JPG, and SVG are allowed to be uploaded as avatar.',
         });
       }
 
       // Upload the avatar to Google Cloud Storage
-      const avatarUrl = await uploadToStorage(req.file, uploadToStorage.avatarStorageBucket);
+      const avatarUrl = await uploadToAvatarStorage(file);
 
       // Update the user's avatar URL in the database
-      const userId = req.params.id ?? req.user.id;
+      const userId = req.user.id;
       const user = await Users.findByPk(userId);
 
       if (!user) {
@@ -282,8 +302,17 @@ module.exports = {
         });
       }
 
+      // Check file format (mimetype)
+      const allowedFormats = ['image/jpeg', 'image/png', 'application/pdf', 'image/jpg', 'image/svg'];
+      if (!allowedFormats.includes(file.mimetype)) {
+        return handleError(res, {
+          status: 400,
+          message: 'Invalid file format. Only JPEG, PNG, PDF, and SVG formats are allowed for KTP.',
+        });
+      }
+
       // Upload the KTP to Google Cloud Storage
-      const ktpUrl = await uploadToStorage(req.file, uploadToStorage.ktpStorageBucket);
+      const ktpUrl = await uploadToKTPStorage(file);
 
       // Update the user's KTP URL in the database
       const userId = req.user.id;
