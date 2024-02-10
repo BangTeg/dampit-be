@@ -21,11 +21,20 @@ router.get("/filter/date", adminToken, reservationController.getReservationsByDa
 // Route to get reservations by vehicle ID
 router.get("/vehicle/:id", adminToken, reservationController.getByVehicleId);
 
+// Route to get all reservations by status
+router.get("/show/:status", adminToken, reservationController.getByReservationStatus);
+
+// // Route to get total revenue all reservations
+// router.get("/revenue/date", adminToken, reservationController.getTotalRevenueByDateRange);
+
 // Route to create a new reservation
 router.post("/", reservationController.create);
 
 // Route to update an reservation status by ID
 router.put("/status/:id", adminToken, reservationController.adminUpdateStatus);
+
+// Route to finish an reservation by ID
+router.put("/finish/:id", reservationController.adminFinishStatus);
 
 // Route to cancel an reservation by ID
 router.put("/cancel/:id", reservationController.userCancelStatus);
