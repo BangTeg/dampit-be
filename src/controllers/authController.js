@@ -25,12 +25,12 @@ const generateAuthToken = (user) => {
 
 // EJS templates
 // Send email verification
-const verifyEmailTemplate = fs.readFileSync("src/views/emails/verifyEmail.ejs", {
+const verifyEmailTemplate = fs.readFileSync("src/views/emails/emailNotification/verifyEmailNotification.ejs", {
   encoding: "utf-8"
 });
 
 // Send password reset
-const passwordResetTemplate = fs.readFileSync("src/views/emails/passwordReset.ejs", {
+const passwordResetTemplate = fs.readFileSync("src/views/emails/emailNotification/passwordResetNotification.ejs", {
   encoding: "utf-8"
 });
 
@@ -39,7 +39,7 @@ const passwordResetTemplate = fs.readFileSync("src/views/emails/passwordReset.ej
 const getVerifyEmailText = (hostUrl, token, firstName) => {
   return ejs.render(verifyEmailTemplate, {
     firstName,
-    path: hostUrl + `/auth/verify`,
+    path: hostUrl + `/auth/verification`,
     token,
   });
 };
@@ -47,7 +47,7 @@ const getVerifyEmailText = (hostUrl, token, firstName) => {
 const getResetEmailText = (hostUrl, token, firstName) => {
   return ejs.render(passwordResetTemplate, {
     firstName,
-    path: hostUrl + `/auth/reset`,
+    path: hostUrl + `/auth/reset-password`,
     token
   });
 };
@@ -91,7 +91,7 @@ const sendResetEmail = async (req, res, email, firstName, token) => {
     status: 404,
     message: "User not found",
   };
-  return handleError(error, req, res);
+  return handleError(res, error);
 };
 
 module.exports = {
@@ -146,7 +146,7 @@ module.exports = {
         isVerified: user.isVerified,
       });
     } catch (error) {
-      return handleError(error, req, res);
+      return handleError(res, error);
     }
   },
 
@@ -270,7 +270,7 @@ module.exports = {
       // Send email verification
       return await sendVerifyEmail(req, res, email, firstName);
     } catch (error) {
-      return handleError(error, req, res);
+      return handleError(res, error);
     }
   },
 
@@ -401,7 +401,7 @@ module.exports = {
           status: 400,
           message: 'User is already verified',
         };
-        return handleError(error, req, res);
+        return handleError(res, error);
       }
   
       // Update user's isVerified status in the database
@@ -409,7 +409,7 @@ module.exports = {
   
       return res.status(200).json({ message: 'Email verification successful' });
     } catch (error) {
-      return handleError(error, req, res);
+      return handleError(res, error);
     }
   }
 };
