@@ -8,6 +8,9 @@ const { upload } = require('../utils/multer');
 // Route to get all users
 router.get('/', adminToken, userController.getAll);
 
+// Route to get all users by role
+router.get('/role/:role', adminToken, userController.getByRole);
+
 // Route to get all filtered users
 router.get('/filter', adminToken, userController.getByFilter);
 

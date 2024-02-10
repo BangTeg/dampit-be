@@ -22,6 +22,25 @@ module.exports = {
       paginated: true,
     })(req, res);
   },
+
+  getByRole: async (req, res) => {
+    const role = req.params.role;
+
+    // Validate role parameter (must be 'admin' or 'user')
+    if (role !== 'admin' && role !== 'user') {
+      return handleError(res, {
+        status: 400,
+        message: 'Invalid role parameter. Must be "admin" or "user".',
+      });
+    }
+    
+    return await crudController.getAll(Users, {
+      where: { role },
+      attributes,
+      paginated: true,
+    })(req, res);
+  },
+
   getById: async (req, res) => {
     const id = req.params.id ?? req.user.id; // Use the ID from the route parameter or token's user Id
     return await crudController.getById(
@@ -303,11 +322,11 @@ module.exports = {
       }
 
       // Check file format (mimetype)
-      const allowedFormats = ['image/jpeg', 'image/png', 'application/pdf', 'image/jpg', 'image/svg'];
+      const allowedFormats = ['image/jpeg', 'image/png', 'image/jpg'];
       if (!allowedFormats.includes(file.mimetype)) {
         return handleError(res, {
           status: 400,
-          message: 'Invalid file format. Only JPEG, PNG, PDF, and SVG formats are allowed for KTP.',
+          message: 'Invalid file format. Only JPEG, JPG, and PNG formats are allowed for KTP.',
         });
       }
 
