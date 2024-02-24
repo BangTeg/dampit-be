@@ -16,7 +16,7 @@ const includeUser = {
 const includeReservation = {
     model: Reservations,
     as: 'Reservations',
-    attributes: ["id", "userId", "vehicleId", "pickUp", "dropOff", "passengers", "institution", "unit", "pickDate", "dropDate", "status", "totalPrice", "finishedAt", "createdAt", "updatedAt"],
+    attributes: ["id", "userId", "vehicleId", "pickUp", "dropOff", "passengers", "institution", "unit", "pickDate", "dropDate", "status", "totalPrice", "isOvertime", "totalPriceAfterOvertime", "finishedAt", "createdAt", "updatedAt"],
 };
 
 const include = [includeUser, includeReservation];

@@ -30,6 +30,8 @@ module.exports = (sequelize, DataTypes) => {
     dropDate: DataTypes.DATE,
     status: DataTypes.ENUM('pending', 'approved', 'rejected', 'finished', 'cancelled'),
     totalPrice: DataTypes.INTEGER,
+    isOvertime: DataTypes.INTEGER,
+    totalPriceAfterOvertime: DataTypes.INTEGER,
     finishedAt: DataTypes.DATE,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE

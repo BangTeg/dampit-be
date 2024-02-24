@@ -46,6 +46,16 @@ module.exports = {
       totalPrice: {
         type: Sequelize.INTEGER
       },
+      isOvertime: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        defaultValue: 0
+      },
+      totalPriceAfterOvertime: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        defaultValue: 0
+      },
       finishedAt: {
         allowNull: true,
         type: Sequelize.DATE,
