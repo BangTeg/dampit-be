@@ -8,7 +8,7 @@ const { crudController } = require('../utils/crud');
 const fs = require('fs');
 const ejs = require('ejs');
 
-const attributes = ["id", "pickUp", "dropOff", "passengers", "institution", "unit", "pickDate", "dropDate", "status", "totalPrice", "createdAt", "updatedAt"];
+const attributes = ["id", "pickUp", "dropOff", "passengers", "institution", "unit", "pickDate", "dropDate", "status", "totalPrice", "isOvertime", "totalPriceAfterOvertime", "createdAt", "updatedAt"];
 const includeUser = {
     model: Users,
     as: 'Users',
@@ -165,65 +165,74 @@ module.exports = {
         })(req, res);
     },
 
-    // // Get total revenue from all finished reservations (sum of totalPrice)
-    // getTotalRevenueByDateRange: async (req, res) => {
-    //     try {
-    //         const { startDate, endDate } = req.query;
+    // Get total revenue from all finished reservations (sum of totalPriceAfterOvertime)
+    getTotalRevenue: async (req, res) => {
+        try {
+            const { month, year } = req.query;
 
-    //         // Check if startDate and endDate are provided
-    //         if (!startDate || !endDate) {
-    //             const { count, rows } = await Reservations.findAndCountAll({
-    //                 where: { status: 'finished' },
-    //                 attributes: [[Reservations.sequelize.fn('SUM', Reservations.sequelize.col('totalPrice')), 'totalRevenue']],
-    //             });
+            let startDate, endDate;
 
-    //             return res.status(200).json({
-    //                 code: 200,
-    //                 status: "OK",
-    //                 message: 'Success getting total revenue from finished Reservations',
-    //                 data: { totalRevenue: rows[0].totalRevenue || 0 },
-    //             });
-    //         }
+            // Check if both month and year are provided
+            if (month && year) {
+                // Construct start date as the first day of the month
+                startDate = new Date(`${year}-${month}-01`);
+                // Construct end date as the last day of the month
+                endDate = new Date(new Date(year, month, 0).toISOString().split('T')[0] + 'T23:59:59');
+            } else if (month && !year) {
+                // Handle error when only month is provided without year
+                return handleError(res, {
+                    status: 400,
+                    message: "Please provide 'year' parameters.",
+                });
+            } else {
+                // If month is not provided, consider the entire year
+                startDate = new Date(`${year}-01-01`);
+                endDate = new Date(`${year}-12-31T23:59:59`);
+            }
 
-    //         // Convert startDate and endDate to Date objects
-    //         const startDateObj = new Date(startDate);
-    //         const endDateObj = new Date(endDate);
+            // Prepare the where clause for the query
+            const whereClause = {
+                status: 'finished',
+            };
 
-    //         // Check if startDate is before or equal to endDate
-    //         if (startDateObj > endDateObj) {
-    //             return handleError (res, {
-    //                 status: 400,
-    //                 message: "'startDate' must be before or equal to 'endDate'.",
-    //             });
-    //         }
+            if (startDate && endDate) {
+                // Include finishedAt between start date and end date
+                whereClause.finishedAt = { [Op.between]: [startDate, endDate] };
+            }
 
-    //         // Additional validation for valid date values
-    //         if (isNaN(startDateObj) || isNaN(endDateObj)) {
-    //             return handleError (res, {
-    //                 status: 400,
-    //                 message: "Please provide valid 'startDate' and 'endDate' query parameters.",
-    //             });
-    //         }
+            // Calculate total revenue from all finished reservations
+            const totalRevenue = await Reservations.sum('totalPriceAfterOvertime', { where: whereClause });
 
-    //         const { count, rows } = await Reservations.findAndCountAll({
-    //             where: { createdAt: { [Op.between]: [startDateObj, endDateObj] }, status: 'finished' },
-    //             attributes: [[Reservations.sequelize.fn('SUM', Reservations.sequelize.col('totalPrice')), 'totalRevenue']],
-    //         });
+            // Calculate total count of finished reservations
+            let totalFinishedReservations;
 
-    //         if (rows.length === 0) {
-    //             return res.status(404).json({ message: 'Finished Reservations not found within the specified date range.' });
-    //         }
+            if (month && year) {
+                totalFinishedReservations = await Reservations.count({ where: whereClause });
+            } else {
+                totalFinishedReservations = await Reservations.count({ where: { status: 'finished' } });
+            }
 
-    //         return res.status(200).json({
-    //             code: 200,
-    //             status: "OK",
-    //             message: 'Success getting total revenue from finished Reservations',
-    //             data: { totalRevenue: rows[0].totalRevenue || 0 },
-    //         });
-    //     } catch (error) {
-    //         return handleError(res, error);
-    //     }
-    // },
+            // Return the response with total revenue and additional details
+            return res.status(200).json({
+                code: 200,
+                status: 'OK',
+                message: 'Success getting total revenue from finished reservations.',
+                data: {
+                    totalRevenue: totalRevenue || 0,
+                    details: {
+                        totalFinishedReservations: totalFinishedReservations || 0,
+                        startDate: startDate || 'All time',
+                        endDate: endDate || 'All time',
+                        month: month || 'All months',
+                        year: year || 'All years',
+                    },
+                },
+            });
+        } catch (error) {
+            // Handle any errors that occur during the process
+            return handleError(res, error);
+        }
+    },
 
     create: async (req, res) => {
         try {
@@ -248,14 +257,14 @@ module.exports = {
             }
 
             // Fetch vehicle data
-            const vehicle = await Vehicles.findByPk(vehicleId, { attributes: ["id", "name", "price", "capacity"] });
-            
-            // Calculate total price based on vehicle price, unit, and rental duration
+            const vehicle = await Vehicles.findByPk(vehicleId, { attributes: ["id", "name", "price", "capacity", "overtime"] });
+
+            // Calculate total price based on vehicle price, unit, and rental duration (in days)
             const rentalDuration = Math.ceil((new Date(dropDate) - new Date(pickDate)) / (1000 * 60 * 60 * 24));
             const totalPrice = vehicle.price * unit * rentalDuration;
 
             // Create reservation data
-            const reservation = await Reservations.create({ userId, vehicleId, pickUp, dropOff, passengers, institution, unit, pickDate, dropDate, totalPrice });
+            const reservation = await Reservations.create({ userId, vehicleId, pickUp, dropOff, passengers, institution, unit, pickDate, dropDate, totalPrice, isOvertime: 0, totalPriceAfterOvertime: 0 });
 
             // Fetch user data
             const user = await Users.findByPk(userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role"] });
@@ -295,17 +304,31 @@ module.exports = {
             return handleError(res, error);
         }
     },
-    adminUpdateStatus: async (req, res) => {
+
+    // Update reservation status by admin user only (approved, rejected, finished)
+    adminUpdateReservationStatus: async (req, res) => {
         try {
             const { id } = req.params;
-            const { status } = req.body;
+            const { status, overtimeHour } = req.body;
+
+            let message = '';
 
             // Validate status parameter
-            if (!status || !['approved', 'rejected'].includes(status)) {
+            if (!status || !['approved', 'rejected', 'finished'].includes(status)) {
                 return handleError(res, {
                     status: 400,
-                    message: "Please provide valid 'status' parameter.",
+                    message: "Please provide a valid 'status' parameter.",
                 });
+            }
+
+            // Validate overtimeHour parameter
+            if (status === 'finished') {
+                if (!overtimeHour || isNaN(overtimeHour) || overtimeHour < 0 || !Number.isInteger(Number(overtimeHour))) {
+                    return handleError(res, {
+                        status: 400,
+                        message: "Please provide a valid 'overtimeHour' parameter as a non-negative integer.",
+                    });
+                }
             }
 
             // Fetch reservation data
@@ -320,15 +343,47 @@ module.exports = {
             }
 
             // Check if the reservation status is already not 'pending'
-            if (reservation.status !== 'pending') {
+            if (reservation.status !== 'pending' && status !== 'finished') {
                 return handleError(res, {
                     status: 400,
                     message: "Reservation status cannot be updated because it is not in 'pending' status.",
                 });
             }
 
+            // Check if the reservation status is already not 'approved' and 'finished'
+            if (reservation.status !== 'approved' && status === 'finished') {
+                return handleError(res, {
+                    status: 400,
+                    message: "Reservation status cannot be updated to 'finished' because it is not in 'approved' status.",
+                });
+            }
+
             // Update reservation status
-            await Reservations.update({ status }, { where: { id } });
+            if (status === 'finished') {
+                // Check if overtimeHour is provided
+                if (!overtimeHour) {
+                    return handleError(res, {
+                        status: 400,
+                        message: "Please provide 'overtimeHour' in the request body when updating reservation status to 'finished'.",
+                    });
+                }
+
+                const vehicle = await Vehicles.findByPk(reservation.vehicleId);
+                const newTotalPrice = reservation.totalPrice + (vehicle.overtime * overtimeHour);
+                const isOvertime = overtimeHour !== 0 ? 1 : 0; // If overtimeHour is not 0, then isOvertime is 1
+
+                await Reservations.update({ status, finishedAt: new Date(), totalPriceAfterOvertime: newTotalPrice, isOvertime: isOvertime }, { where: { id } });
+                message = 'FINISHED';
+            } else if (status === 'rejected') {
+                // Update status to rejected and totalPrice to 0
+                await Reservations.update({ status: 'rejected', totalPrice: 0 }, { where: { id } });
+                message = 'REJECTED';
+            } else {
+                // For 'approved' and 'rejected' status, only update status
+                // Set isOvertime and totalPriceAfterOvertime to 0 when changing from 'pending' to 'approved'
+                await Reservations.update({ status, isOvertime: 0, totalPriceAfterOvertime: 0 }, { where: { id } });
+                message = status.toUpperCase();
+            }
 
             // Fetch user data
             const user = await Users.findByPk(reservation.userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role"] });
@@ -336,7 +391,7 @@ module.exports = {
             // Send email notification to the user
             const emailerResult = await sendEmail({
                 ...mailOptions,
-                subject: mailOptions.subjectPrefix + `Dampit Reservation Status Update: ${status.toUpperCase()}`,
+                subject: mailOptions.subjectPrefix + `Dampit Reservation Status Update: ${message}`,
                 to: user.email,
                 html: ejs.render(getEmailTemplateByStatus(status), { user, vehicle: reservation.Vehicles, reservation }),
             });
@@ -350,98 +405,13 @@ module.exports = {
                 });
             }
 
-            return res.status(200).json({
-                code: 200,
-                status: "OK",
-                message: `Reservation status updated to ${status.toUpperCase()} and notification email sent.`,
-                data: reservation,
-            });
-        } catch (error) {
-            console.error("Error updating reservation status:", error);
-            return handleError(res, error);
-        }
-    },
-
-    adminFinishStatus: async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { id: tokenUserId } = req.user; // Get user ID from token
-            const { overtimeHour } = req.body; // Get overtime from request body
-
-            // Fetch reservation data
-            const reservation = await Reservations.findByPk(id, { include });
-
-            // Check if reservation exists
-            if (!reservation) {
-                return handleError(res, {
-                    status: 404,
-                    message: "Reservation not found.",
-                });
-            }
-
-            // Check if the user has the correct permissions
-            if (tokenUserId !== reservation.userId) {
-                return handleError(res, {
-                    status: 403,
-                    message: "You are not authorized to finish this reservation.",
-                });
-            }
-
-            // Check if the reservation status is already not 'approved'
-            if (reservation.status !== 'approved') {
-                return handleError(res, {
-                    status: 400,
-                    message: "Reservation status cannot be updated because it is not in 'approved' status.",
-                });
-            }
-
-            // Calculate new totalPrice with overtime
-            const vehicle = await Vehicles.findByPk(reservation.vehicleId);
-            const newTotalPrice = reservation.totalPrice + (vehicle.overtime * overtimeHour);
-
-            // Update reservation status and totalPrice
-            await Reservations.update({ status: 'finished', finishedAt: new Date(), totalPrice: newTotalPrice }, { where: { id } });
-
-            // Fetch user data
-            const user = await Users.findByPk(reservation.userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role"] });
-
-            // Fetch admin users
-            const adminUsers = await Users.findAll({ where: { role: 'admin' }, attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address"] });
-
-            // Send email notification to all admin users
-            const emailPromises = adminUsers.map(async (admin) => {
-                const emailerResult = await sendEmail({
-                    ...mailOptions,
-                    subject: mailOptions.subjectPrefix + "Reservation Status Update: FINISHED",
-                    to: admin.email,
-                    html: ejs.render(readReservationStatusEmailTemplate('finished'), { user, vehicle: reservation.Vehicles, reservation }),
-                });
-
-                return emailerResult.success;
-            });
-
-            // Wait for all email promises to resolve
-            const emailResults = await Promise.allSettled(emailPromises);
-
-            // If any email sending fails, log an error
-            if (emailResults.some((result) => result.status === 'rejected')) {
-                const failedEmailPromises = emailResults.filter((result) => result.status === 'rejected');
-                console.error("Error sending email notifications");
-                console.error("Failed Email Promises:", failedEmailPromises);
-
-                return handleError(res, {
-                    status: 500,
-                    message: "Failed updating reservation status and sending notification emails.",
-                });
-            }
-
             // Log success message
-            console.log("Reservation status updated to FINISHED and notifications sent.");
+            console.log(`Reservation status updated to ${message} and notification email sent.`);
 
             return res.status(200).json({
                 code: 200,
                 status: "OK",
-                message: "Success updating reservation status and sending notification emails.",
+                message: `Reservation status updated to ${message} and notification email sent.`,
                 data: reservation,
             });
         } catch (error) {
@@ -471,6 +441,14 @@ module.exports = {
                 return handleError(res, {
                     status: 403,
                     message: "You are not authorized to cancel this reservation.",
+                });
+            }
+
+            // Return error if reservation status is not 'pending'
+            if (reservation.status !== 'pending') {
+                return handleError(res, {
+                    status: 400,
+                    message: "This reservation cannot be cancelled.",
                 });
             }
 
