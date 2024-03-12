@@ -3,12 +3,18 @@ require('dotenv').config();
 
 // Destructure the relevant environment variables for the database connection.
 const {
+  DEVDB_USERNAME,
+  DEVDB_DATABASE,
+  DEVDB_PASSWORD = null,
+  DEVDB_HOST,
+  DEVDB_PORT,
   DB_USERNAME,
   DB_DATABASE,
-  DB_PASSWORD = null, // Default to null if no password is provided in the environment variables.
+  DB_PASSWORD,
   DB_HOST,
   DB_PORT,
-  DB_DIALECT = 'mysql' // Default to MySQL as the dialect if not specified.
+  DB_INSTANCE,
+  DB_DIALECT = 'mysql' // Default to MySQL as the dialect
 } = process.env;
 
 // Export the configuration object for different environments (development, test, production).
@@ -21,12 +27,6 @@ module.exports = {
     "port": DB_PORT,
     "dialect": DB_DIALECT,
     "timezone": "+07:00", // Set timezone to Jakarta time.
-    "pool": {
-      "max": 5,
-      "min": 0,
-      "acquire": 30000,
-      "idle": 10000
-    },
   },
   "test": {
     "username": DB_USERNAME,
@@ -36,12 +36,6 @@ module.exports = {
     "port": DB_PORT,
     "dialect": DB_DIALECT,
     "timezone": "+07:00", // Set timezone to Jakarta time.
-    "pool": {
-      "max": 5,
-      "min": 0,
-      "acquire": 30000,
-      "idle": 10000
-    },
   },
   "production": {
     "username": DB_USERNAME,
@@ -51,11 +45,5 @@ module.exports = {
     "port": DB_PORT,
     "dialect": DB_DIALECT,
     "timezone": "+07:00", // Set timezone to Jakarta time.
-    "pool": {
-      "max": 5,
-      "min": 0,
-      "acquire": 30000,
-      "idle": 10000
-    },
   }
 };

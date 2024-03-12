@@ -1,8 +1,2 @@
 runtime: nodejs18  # Node Version
-
-# # This is needed to run the app on Google App Engine
-# handlers:
-# - url: /.*
-#   script: auto
-#   secure: always
-#   redirect_http_response_code: 301
+entrypoint: node app.js

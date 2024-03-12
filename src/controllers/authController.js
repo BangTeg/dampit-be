@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-const { JWT_SECRET } = process.env;
+const { JWT_SECRET, JWT_EXPIRY } = process.env;
 
 const { Users } = require('../../db/models');
 const userController = require('./userController');
@@ -19,7 +19,7 @@ const bcrypt = require('bcrypt');
 const generateAuthToken = (user) => {
   const { id, firstName, lastName, email, role } = user;
   return jwt.sign({ id, firstName, lastName, email, role }, JWT_SECRET, {
-    expiresIn: 86400000, // TODO: move to config
+    expiresIn: JWT_EXPIRY,
   });
 };
 
