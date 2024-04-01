@@ -3,11 +3,11 @@ require('dotenv').config();
 // const { handleError } = require('./src/middleware/errorHandler');
 const express = require('express');
 const app = express();
-const port = process.env.PORT;
-// const port = process.env.DEV_PORT;
+const port = process.env.PORT || 4000;
 const cors = require('cors');
 const route = require('./src/routes');
 const session = require('express-session');
+const memoryStore = require('memorystore')(session);
 const passport = require('passport');
 
 // // Logger middleware
@@ -19,8 +19,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
+  cookie: { maxAge: 86400000 },
+  store: new memoryStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  }),
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   secret: process.env.SESSION_SECRET || 'defaultSecret'
 }));
 

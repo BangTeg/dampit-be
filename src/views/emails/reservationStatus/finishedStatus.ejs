@@ -46,14 +46,16 @@
 
         <ul>
             <li><strong>Reservation ID:</strong> <%= reservation.id %></li>
+            <li><strong>Passenger:</strong> <%= reservation.passengers %> Person(s)</li>
             <li><strong>Pick-Up Date:</strong> <%= reservation.pickDate %></li>
             <li><strong>Drop-Off Date:</strong> <%= reservation.dropDate %></li>
             <li><strong>Pick-Up Location:</strong> <%= reservation.pickUp %></li>
             <li><strong>Drop-Off Location:</strong> <%= reservation.dropOff %></li>
             <li><strong>Vehicle:</strong> <%= vehicle.name %></li>
-            <li><strong>Total Price:</strong> <%= reservation.totalPrice %></li>
-            <li><strong>Unit:</strong> <%= reservation.unit %></li>
-            <li><strong>Passenger:</strong> <%= reservation.passengers %></li>
+            <li><strong>Unit(s):</strong> <%= reservation.unit %> Car(s)</li>
+            <li><strong>Overtime (Hours):</strong> <%= reservation.overtimeHour %></li>
+            <li><strong>Total Price:</strong> Rp.<%= reservation.totalPriceAfterOvertime %>,00- </li>
+            <li><strong>Finished Date: <%= reservation.finishedAt %></strong></li>
         </ul>
 
         <p>We hope you had a pleasant experience with our service. If you have any feedback or inquiries, please

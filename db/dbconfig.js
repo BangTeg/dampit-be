@@ -1,11 +1,9 @@
-// Import and configure the dotenv package to load environment variables from a .env file.
 require('dotenv').config();
 
-// Destructure the relevant environment variables for the database connection.
 const {
   DEVDB_USERNAME,
   DEVDB_DATABASE,
-  DEVDB_PASSWORD = null,
+  DEVDB_PASSWORD,
   DEVDB_HOST,
   DEVDB_PORT,
   DB_USERNAME,
@@ -13,18 +11,18 @@ const {
   DB_PASSWORD,
   DB_HOST,
   DB_PORT,
-  DB_INSTANCE,
+  DB_SOCKET,
   DB_DIALECT = 'mysql' // Default to MySQL as the dialect
 } = process.env;
 
 // Export the configuration object for different environments (development, test, production).
 module.exports = {
   "development": {
-    "username": DB_USERNAME,
-    "password": DB_PASSWORD,
-    "database": DB_DATABASE,
-    "host": DB_HOST,
-    "port": DB_PORT,
+    "username": DEVDB_USERNAME,
+    "password": DEVDB_PASSWORD,
+    "database": DEVDB_DATABASE,
+    "host": DEVDB_HOST,
+    "port": DEVDB_PORT,
     "dialect": DB_DIALECT,
     "timezone": "+07:00", // Set timezone to Jakarta time.
   },
@@ -35,6 +33,7 @@ module.exports = {
     "host": DB_HOST,
     "port": DB_PORT,
     "dialect": DB_DIALECT,
+    "socketPath": `/cloudsql/${DB_SOCKET}`,
     "timezone": "+07:00", // Set timezone to Jakarta time.
   },
   "production": {
@@ -44,6 +43,7 @@ module.exports = {
     "host": DB_HOST,
     "port": DB_PORT,
     "dialect": DB_DIALECT,
+    "socketPath": `/cloudsql/${DB_SOCKET}`,
     "timezone": "+07:00", // Set timezone to Jakarta time.
   }
 };

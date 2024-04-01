@@ -1,2 +1,5 @@
 runtime: nodejs18  # Node Version
 entrypoint: node app.js
+
+beta_settings:
+  cloud_sql_instances: dampit:asia-southeast2:dampitdb

@@ -7,7 +7,7 @@ const reservationController = require("../controllers/reservationController");
 router.get("/", adminToken, reservationController.getAll);
 
 // Route to get a reservation by ID
-router.get("/:id", adminToken, reservationController.getById);
+router.get("/:id", reservationController.getById);
 
 // Route to get a reservation by User ID
 router.get("/user/:id", adminToken, reservationController.getByUserId);
@@ -23,9 +23,6 @@ router.get("/vehicle/:id", adminToken, reservationController.getByVehicleId);
 
 // Route to get all reservations by status
 router.get("/show/:status", adminToken, reservationController.getByReservationStatus);
-
-// Route to get total revenue by month and year
-router.get("/revenue/by", adminToken, reservationController.getTotalRevenue);
 
 // Route to create a new reservation
 router.post("/", reservationController.create);

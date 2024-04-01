@@ -3,6 +3,7 @@ const router = Router();
 const authRoute = require('./authRoute');
 const googleOAuthRoute = require('./googleOAuthRoute');
 const userRoute = require('./userRoute');
+const adminRoute = require('./adminRoute');
 const vehicleRoute = require('./vehicleRoute');
 const reservationRoute = require('./reservationRoute');
 
@@ -22,5 +23,8 @@ router.use('/vehicle', verifiedToken, vehicleRoute);
 
 // Route to the reservation router
 router.use('/reservation', verifiedToken, reservationRoute);
+
+// Route to the admin dashboard
+router.use('/admin', verifiedToken, adminRoute);
 
 module.exports = router;

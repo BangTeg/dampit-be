@@ -51,6 +51,10 @@ module.exports = {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
+      overtimeHour: {
+        allowNull: true,
+        type: Sequelize.INTEGER,
+      },
       totalPriceAfterOvertime: {
         allowNull: false,
         type: Sequelize.INTEGER,

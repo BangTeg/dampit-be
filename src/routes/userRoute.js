@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const userController = require('../controllers/userController');
-const { adminToken } = require('../middlewares/authentication')
+const { adminToken } = require('../middlewares/authentication');
 const { upload } = require('../utils/multer');
 
 // Route to get all users

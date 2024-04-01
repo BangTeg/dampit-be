@@ -8,7 +8,7 @@ const { crudController } = require('../utils/crud');
 const fs = require('fs');
 const ejs = require('ejs');
 
-const attributes = ["id", "pickUp", "dropOff", "passengers", "institution", "unit", "pickDate", "dropDate", "status", "totalPrice", "isOvertime", "totalPriceAfterOvertime", "createdAt", "updatedAt"];
+const attributes = ["id", "pickUp", "dropOff", "passengers", "institution", "unit", "pickDate", "dropDate", "status", "totalPrice", "isOvertime", "overtimeHour", "totalPriceAfterOvertime", "createdAt", "updatedAt"];
 const includeUser = {
     model: Users,
     as: 'Users',
@@ -39,14 +39,50 @@ module.exports = {
     includeUser,
     includeVehicle,
     attributes,
+
+    // Get All Reservations data with sort filter: Data start from pending status, and order by createdAt ASCENDING
     getAll: async (req, res) => {
-        return await crudController.getAll(Reservations, {
-            where: {},
-            include,
-            paginated: true,
-        })(req, res);
+        try {
+            const { page, limit } = req.query;
+            const pageOptions = { page: parseInt(page) || 1, limit: parseInt(limit) || 10 };
+
+            const pendingReservations = await Reservations.findAndCountAll({
+                where: { status: "pending" },
+                include,
+                attributes,
+                order: [["createdAt", "ASC"]],
+                offset: (pageOptions.page - 1) * pageOptions.limit,
+                limit: pageOptions.limit,
+            });
+
+            const otherReservations = await Reservations.findAndCountAll({
+                where: { status: { [Op.not]: "pending" } },
+                include,
+                attributes,
+                order: [["createdAt", "DESC"]],
+                offset: (pageOptions.page - 1) * pageOptions.limit,
+                limit: pageOptions.limit,
+            });
+
+            const mergedReservations = pendingReservations.rows.concat(otherReservations.rows);
+            
+            return res.status(200).json({
+                code: 200,
+                status: "OK",
+                message: 'Success getting paginated Reservations(s)',
+                data: {
+                    rows: mergedReservations,
+                    totalRows: pendingReservations.count + otherReservations.count,
+                    totalPages: Math.ceil((pendingReservations.count + otherReservations.count) / pageOptions.limit),
+                    currentPage: pageOptions.page,
+                },
+            });
+        } catch (error) {
+            return handleError(res, error);
+        }
     },
 
+    // Get Reservation data by ID
     getById: crudController.getById(Reservations, { include }),
 
     getByUserId: async (req, res) => {
@@ -165,75 +201,6 @@ module.exports = {
         })(req, res);
     },
 
-    // Get total revenue from all finished reservations (sum of totalPriceAfterOvertime)
-    getTotalRevenue: async (req, res) => {
-        try {
-            const { month, year } = req.query;
-
-            let startDate, endDate;
-
-            // Check if both month and year are provided
-            if (month && year) {
-                // Construct start date as the first day of the month
-                startDate = new Date(`${year}-${month}-01`);
-                // Construct end date as the last day of the month
-                endDate = new Date(new Date(year, month, 0).toISOString().split('T')[0] + 'T23:59:59');
-            } else if (month && !year) {
-                // Handle error when only month is provided without year
-                return handleError(res, {
-                    status: 400,
-                    message: "Please provide 'year' parameters.",
-                });
-            } else {
-                // If month is not provided, consider the entire year
-                startDate = new Date(`${year}-01-01`);
-                endDate = new Date(`${year}-12-31T23:59:59`);
-            }
-
-            // Prepare the where clause for the query
-            const whereClause = {
-                status: 'finished',
-            };
-
-            if (startDate && endDate) {
-                // Include finishedAt between start date and end date
-                whereClause.finishedAt = { [Op.between]: [startDate, endDate] };
-            }
-
-            // Calculate total revenue from all finished reservations
-            const totalRevenue = await Reservations.sum('totalPriceAfterOvertime', { where: whereClause });
-
-            // Calculate total count of finished reservations
-            let totalFinishedReservations;
-
-            if (month && year) {
-                totalFinishedReservations = await Reservations.count({ where: whereClause });
-            } else {
-                totalFinishedReservations = await Reservations.count({ where: { status: 'finished' } });
-            }
-
-            // Return the response with total revenue and additional details
-            return res.status(200).json({
-                code: 200,
-                status: 'OK',
-                message: 'Success getting total revenue from finished reservations.',
-                data: {
-                    totalRevenue: totalRevenue || 0,
-                    details: {
-                        totalFinishedReservations: totalFinishedReservations || 0,
-                        startDate: startDate || 'All time',
-                        endDate: endDate || 'All time',
-                        month: month || 'All months',
-                        year: year || 'All years',
-                    },
-                },
-            });
-        } catch (error) {
-            // Handle any errors that occur during the process
-            return handleError(res, error);
-        }
-    },
-
     create: async (req, res) => {
         try {
             const { vehicleId, pickUp, dropOff, passengers, institution, unit, pickDate, dropDate } = req.body;
@@ -321,12 +288,13 @@ module.exports = {
                 });
             }
 
-            // Validate overtimeHour parameter
+            console.log(overtimeHour);
+            
             if (status === 'finished') {
-                if (!overtimeHour || isNaN(overtimeHour) || overtimeHour < 0 || !Number.isInteger(Number(overtimeHour))) {
+                if ( overtimeHour < 0) {
                     return handleError(res, {
                         status: 400,
-                        message: "Please provide a valid 'overtimeHour' parameter as a non-negative integer.",
+                        message: "Please provide a valid 'overtimeHour' parameter as a non-negative integer",
                     });
                 }
             }
@@ -361,7 +329,7 @@ module.exports = {
             // Update reservation status
             if (status === 'finished') {
                 // Check if overtimeHour is provided
-                if (!overtimeHour) {
+                if (overtimeHour === undefined || overtimeHour === null || overtimeHour === '') {
                     return handleError(res, {
                         status: 400,
                         message: "Please provide 'overtimeHour' in the request body when updating reservation status to 'finished'.",
@@ -369,14 +337,14 @@ module.exports = {
                 }
 
                 const vehicle = await Vehicles.findByPk(reservation.vehicleId);
-                const newTotalPrice = reservation.totalPrice + (vehicle.overtime * overtimeHour);
+                const newTotalPrice = reservation.totalPrice + (reservation.unit * (vehicle.overtime * overtimeHour));
                 const isOvertime = overtimeHour !== 0 ? 1 : 0; // If overtimeHour is not 0, then isOvertime is 1
 
-                await Reservations.update({ status, finishedAt: new Date(), totalPriceAfterOvertime: newTotalPrice, isOvertime: isOvertime }, { where: { id } });
+                await Reservations.update({ status, finishedAt: new Date(), totalPriceAfterOvertime: newTotalPrice, isOvertime: isOvertime, overtimeHour: overtimeHour }, { where: { id } });
                 message = 'FINISHED';
             } else if (status === 'rejected') {
-                // Update status to rejected and totalPrice to 0
-                await Reservations.update({ status: 'rejected', totalPrice: 0 }, { where: { id } });
+                // Update status to rejected
+                await Reservations.update({ status: 'rejected' }, { where: { id } });
                 message = 'REJECTED';
             } else {
                 // For 'approved' and 'rejected' status, only update status
@@ -405,6 +373,10 @@ module.exports = {
                 });
             }
 
+            // Fetch updated reservation data
+            const updatedReservation = await Reservations.findByPk(id, { include });
+
+
             // Log success message
             console.log(`Reservation status updated to ${message} and notification email sent.`);
 
@@ -412,7 +384,7 @@ module.exports = {
                 code: 200,
                 status: "OK",
                 message: `Reservation status updated to ${message} and notification email sent.`,
-                data: reservation,
+                data: updatedReservation,
             });
         } catch (error) {
             console.error("Error updating reservation status:", error);
@@ -488,6 +460,9 @@ module.exports = {
                 });
             }
 
+            // Fetch updated reservation data
+            const updatedReservation = await Reservations.findByPk(id, { include });
+
             // Log success message
             console.log("Reservation status updated to CANCELLED and notifications sent.");
 
@@ -495,7 +470,7 @@ module.exports = {
                 code: 200,
                 status: "OK",
                 message: "Success updating reservation status and sending notification emails.",
-                data: reservation,
+                data: updatedReservation,
             });
         } catch (error) {
             console.error("Error updating reservation status:", error);

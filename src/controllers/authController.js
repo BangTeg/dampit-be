@@ -39,7 +39,7 @@ const passwordResetTemplate = fs.readFileSync("src/views/emails/emailNotificatio
 const getVerifyEmailText = (hostUrl, token, firstName) => {
   return ejs.render(verifyEmailTemplate, {
     firstName,
-    path: hostUrl + `/auth/verification`,
+    path: hostUrl + `/auth/verify`,
     token,
   });
 };
@@ -196,6 +196,7 @@ module.exports = {
 
       const data = await Users.create({
         id: userId,
+        username,
         firstName,
         lastName,
         username,
@@ -258,6 +259,7 @@ module.exports = {
 
       const data = await Users.create({
         id: userId,
+        username,
         firstName,
         lastName,
         username,

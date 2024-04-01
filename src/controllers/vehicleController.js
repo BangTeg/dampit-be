@@ -1,4 +1,4 @@
-const { Vehicles, Reservations, Users } = require('../../db/models');
+const { Vehicles, Reservations } = require('../../db/models');
 const { Op } = require('sequelize');
 const { crudController } = require('../utils/crud');
 const { handleError } = require('../middlewares/errorHandler');
@@ -7,29 +7,18 @@ const defaultPageLimit = 10;
 
 const attributes = ["id", "name", "price", "model", "capacity", "include", "area", "parking", "payment", "overtime", "createdAt", "updatedAt"];
 
-const includeUser = {
-    model: Users,
-    as: 'Users',
-    attributes: ["id", "username", "firstName", "lastName", "email", "role", "gender", "avatar", "address", "contact", "ktp"],
-};
-
 const includeReservation = {
     model: Reservations,
     as: 'Reservations',
-    attributes: ["id", "userId", "vehicleId", "pickUp", "dropOff", "passengers", "institution", "unit", "pickDate", "dropDate", "status", "totalPrice", "isOvertime", "totalPriceAfterOvertime", "finishedAt", "createdAt", "updatedAt"],
+    attributes: ["id", "userId", "vehicleId", "pickUp", "dropOff", "passengers", "institution", "unit", "pickDate", "dropDate", "status", "totalPrice", "isOvertime", "overtimeHour", "totalPriceAfterOvertime", "finishedAt", "createdAt", "updatedAt"],
 };
 
-const include = [includeUser, includeReservation];
-
 module.exports = {
-    includeUser,
     includeReservation,
     attributes,
     getAll : async (req, res) => {
         return await crudController.getAll(Vehicles, {
-            where: {},
-            include,
-            paginated: true,
+            where: {}
         })(req, res);
     },
 
@@ -65,15 +54,11 @@ module.exports = {
         }
     },
 
-    getById: crudController.getById(Vehicles, {
-        include,
-    }),
+    getById: crudController.getById(Vehicles),
 
     create: crudController.create(Vehicles),
 
-    update: crudController.update(Vehicles, {
-        include,
-    }),
+    update: crudController.update(Vehicles),
 
     delete: async (req, res) => {
         try {
@@ -107,5 +92,5 @@ module.exports = {
         } catch (err) {
             return handleError(res, err);
         }
-        },
+    },
 };
