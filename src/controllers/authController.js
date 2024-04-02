@@ -1,6 +1,6 @@
 require('dotenv').config()
 
-const { JWT_SECRET, JWT_EXPIRY } = process.env;
+const { JWT_SECRET, JWT_EXPIRY, FE_HOST } = process.env;
 
 const { Users } = require('../../db/models');
 const userController = require('./userController');
@@ -36,11 +36,12 @@ const passwordResetTemplate = fs.readFileSync("src/views/emails/emailNotificatio
 
 // Email Logics
 // Render the emails
-const getVerifyEmailText = (hostUrl, token, firstName) => {
+const getVerifyEmailText = (hostUrl, token, firstName, email) => {
   return ejs.render(verifyEmailTemplate, {
     firstName,
-    path: hostUrl + `/auth/verify`,
+    path: hostUrl + `/auth/verification`,
     token,
+    email
   });
 };
 
@@ -54,12 +55,13 @@ const getResetEmailText = (hostUrl, token, firstName) => {
 
 // Send the emails using nodemailer
 const sendVerifyEmail = async (req, res, email, firstName, token) => {
-  const hostUrl = `${req.protocol}://${req.get("host")}`;
+  // const hostUrl = `${req.protocol}://${req.get("host")}`;
+  const hostUrl = FE_HOST;
   try {
     await sendAuthEmail(req, res, "Verification", email, firstName, hostUrl, getVerifyEmailText, token);
     return res.status(200).json({
       success: true,
-      message: 'Email verification sent successfully'
+      message: 'Email verification sent successfully to ' + email,
     });
   } catch (error) {
     console.error('Error sending email:', error);
@@ -69,7 +71,8 @@ const sendVerifyEmail = async (req, res, email, firstName, token) => {
 
 // Send password reset email
 const sendResetEmail = async (req, res, email, firstName, token) => {
-  const hostUrl = `${req.protocol}://${req.get("host")}`;
+  // const hostUrl = `${req.protocol}://${req.get("host")}`;
+  const hostUrl = FE_HOST;
   const user = await Users.findOne({
     where: { email },
     attributes: userController.attributes,
@@ -399,11 +402,7 @@ module.exports = {
       }
   
       if (user.isVerified === 'yes') {
-        const error = {
-          status: 400,
-          message: 'User is already verified',
-        };
-        return handleError(res, error);
+        return res.status(200).json({ message: email + 'is already verified' });
       }
   
       // Update user's isVerified status in the database

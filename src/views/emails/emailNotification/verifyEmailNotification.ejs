@@ -60,7 +60,7 @@
       <img src="https://bangteg.github.io/images/dampit-trans-logo.png" alt="Dampit Trans Logo" class="logo">
       <p>Dear <strong><%= firstName %></strong>,</p>
       <p>Welcome to Dampit Trans Solo! To activate your account, please click the button below to verify your email:</p>
-      <a href="<%= path %>/<%= token %>" class="verify-button">Verify Email</a>
+      <a href="<%= path %>/<%= token %>?email=<%= email %>" target="_blank" class="verify-button">Verify Email</a>
       <p>If you have any questions or require assistance, please don't hesitate to contact our support team.</p>
     </div>
     <div class="footer">

@@ -52,7 +52,7 @@ const sendAuthEmail = async (req, res, title, email, firstName, hostUrl, getText
       ...mailOptions,
       subject: mailOptions.subjectPrefix + title,
       to: email,
-      html: getText(hostUrl, token, firstName),
+      html: getText(hostUrl, token, firstName, email),
     });
 
     if (emailerResult.success) {
