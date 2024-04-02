@@ -34,7 +34,6 @@ module.exports = {
     "port": DB_PORT,
     "dialect": DB_DIALECT,
     "socketPath": `/cloudsql/${DB_SOCKET}`,
-    "timezone": "+07:00", // Set timezone to Jakarta time.
   },
   "production": {
     "username": DB_USERNAME,
@@ -44,6 +43,5 @@ module.exports = {
     "port": DB_PORT,
     "dialect": DB_DIALECT,
     "socketPath": `/cloudsql/${DB_SOCKET}`,
-    "timezone": "+07:00", // Set timezone to Jakarta time.
   }
 };
