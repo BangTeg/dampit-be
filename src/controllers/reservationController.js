@@ -40,7 +40,6 @@ module.exports = {
     includeVehicle,
     attributes,
 
-    // Get All Reservations data with sort filter: Data start from pending status, and order by createdAt ASCENDING
     getAll: async (req, res) => {
         try {
             const { page, limit } = req.query;
@@ -64,23 +63,25 @@ module.exports = {
                 limit: pageOptions.limit,
             });
 
-            const mergedReservations = pendingReservations.rows.concat(otherReservations.rows);
-            
+            const mergedReservations = [...pendingReservations.rows, ...otherReservations.rows];
+            const totalRows = pendingReservations.count + otherReservations.count;
+            const totalPages = Math.ceil(totalRows / pageOptions.limit);
+
             return res.status(200).json({
                 code: 200,
                 status: "OK",
                 message: 'Success getting paginated Reservations(s)',
                 data: {
                     rows: mergedReservations,
-                    totalRows: pendingReservations.count + otherReservations.count,
-                    totalPages: Math.ceil((pendingReservations.count + otherReservations.count) / pageOptions.limit),
+                    totalRows,
+                    totalPages,
                     currentPage: pageOptions.page,
                 },
             });
         } catch (error) {
             return handleError(res, error);
         }
-    },
+    },    
 
     // Get Reservation data by ID
     getById: crudController.getById(Reservations, { include }),
