@@ -40,48 +40,31 @@ module.exports = {
     includeVehicle,
     attributes,
 
-    getAll: async (req, res) => {
-        try {
+    getAll: crudController.getAll(Reservations, {
+        include,
+        attributes,
+        paginated: true,
+        f: async (req, res, rows) => {
             const { page, limit } = req.query;
-            const pageOptions = { page: parseInt(page) || 1, limit: parseInt(limit) || 10 };
-
-            const pendingReservations = await Reservations.findAndCountAll({
-                where: { status: "pending" },
-                include,
-                attributes,
-                order: [["createdAt", "ASC"]],
-                offset: (pageOptions.page - 1) * pageOptions.limit,
-                limit: pageOptions.limit,
-            });
-
-            const otherReservations = await Reservations.findAndCountAll({
-                where: { status: { [Op.not]: "pending" } },
-                include,
-                attributes,
-                order: [["createdAt", "DESC"]],
-                offset: (pageOptions.page - 1) * pageOptions.limit,
-                limit: pageOptions.limit,
-            });
-
-            const mergedReservations = [...pendingReservations.rows, ...otherReservations.rows];
-            const totalRows = pendingReservations.count + otherReservations.count;
-            const totalPages = Math.ceil(totalRows / pageOptions.limit);
-
-            return res.status(200).json({
-                code: 200,
-                status: "OK",
-                message: 'Success getting paginated Reservations(s)',
-                data: {
-                    rows: mergedReservations,
-                    totalRows,
-                    totalPages,
-                    currentPage: pageOptions.page,
-                },
-            });
-        } catch (error) {
-            return handleError(res, error);
+            const pendingReservations = rows.filter(row => row.status === "pending");
+            const otherReservations = rows.filter(row => row.status !== "pending");
+    
+            const mergedReservations = [...pendingReservations, ...otherReservations];
+            const totalRows = rows.length;
+            const totalPages = Math.ceil(totalRows / limit);
+    
+            // Remove the extra data if the response exceeds the limit
+            if (mergedReservations.length > limit) {
+                mergedReservations.pop();
+            }
+    
+            return {
+                rows: mergedReservations,
+                totalRows,
+                totalPages,
+            };
         }
-    },    
+    }),    
 
     // Get Reservation data by ID
     getById: crudController.getById(Reservations, { include }),
