@@ -104,7 +104,7 @@ module.exports = {
       const { email, password } = req.body;
       const user = await Users.findOne({ where: { email } });
 
-      // If user doesn't exist by email or username
+      // If user doesn't exist by email
       if (!user) {
         return handleError(res, {
           status: 401,
@@ -116,7 +116,7 @@ module.exports = {
       if (user.isVerified === 'no') {
         return handleError(res, {
           status: 401,
-          message: 'Email is not verified',
+          message: 'Email is not verified, Please verify your email before logging in.',
         });
       }
 
@@ -127,7 +127,7 @@ module.exports = {
       if (!isMatch) {
         return handleError(res, {
           status: 401,
-          message: 'Password incorrect',
+          message: 'Password incorrect, Please try again with the correct password.',
         });
       }
 

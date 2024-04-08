@@ -207,11 +207,30 @@ module.exports = {
                 });
             }
 
+            // Check if pickDate is before dropDate
+            const pickDateObj = new Date(pickDate);
+            const dropDateObj = new Date(dropDate);
+            if (pickDateObj >= dropDateObj) {
+                return handleError(res, {
+                    status: 400,
+                    message: "Invalid pickDate and dropDate. Please make sure pickDate is before dropDate.",
+                });
+            }
+
+            // Check if pickDate and dropDate are in the future
+            const currentDate = new Date();
+            if (pickDateObj < currentDate || dropDateObj < currentDate) {
+                return handleError(res, {
+                    status: 400,
+                    message: "Invalid pickDate and dropDate. Please make sure pickDate and dropDate are in the future.",
+                });
+            }
+
             // Fetch vehicle data
             const vehicle = await Vehicles.findByPk(vehicleId, { attributes: ["id", "name", "price", "capacity", "overtime"] });
 
             // Calculate total price based on vehicle price, unit, and rental duration (in days)
-            const rentalDuration = Math.ceil((new Date(dropDate) - new Date(pickDate)) / (1000 * 60 * 60 * 24));
+            const rentalDuration = Math.ceil((dropDateObj - pickDateObj) / (1000 * 60 * 60 * 24));
             const totalPrice = vehicle.price * unit * rentalDuration;
 
             // Create reservation data
