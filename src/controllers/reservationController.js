@@ -48,9 +48,9 @@ module.exports = {
             const { page, limit } = req.query;
             const pendingReservations = rows.filter(row => row.status === "pending");
             const otherReservations = rows.filter(row => row.status !== "pending");
-    
+            
+            const totalRows = await Reservations.count();
             const mergedReservations = [...pendingReservations, ...otherReservations];
-            const totalRows = rows.length;
             const totalPages = Math.ceil(totalRows / limit);
     
             // Remove the extra data if the response exceeds the limit
@@ -64,7 +64,7 @@ module.exports = {
                 totalPages,
             };
         }
-    }),    
+    }),
 
     // Get Reservation data by ID
     getById: crudController.getById(Reservations, { include }),
