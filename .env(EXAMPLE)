@@ -1,0 +1,49 @@
+# # Rename this file to .env before running the server
+
+# DATABASE
+DB_USERNAME = root
+DB_DATABASE = database name
+DB_HOST = public-ip
+DB_PORT = 3306
+DB_PASSWORD = password
+DB_SOCKET = {project name}:{db zone}:{instance name}
+
+DEVDB_USERNAME = root
+DEVDB_PASSWORD = password
+DEVDB_DATABASE = database name
+DEVDB_HOST = 127.0.0.1
+DEVDB_PORT = 3306
+
+# HOST
+# PORT = 8080
+
+# HOST URL for FE and BE (Local Environment)
+FE_HOST = http://localhost:3000
+BE_HOST = http://localhost:4000
+
+# JWT
+JWT_SECRET = anything
+JWT_EXPIRY = 24h
+
+# DB Environment
+# NODE_ENV = production
+
+# EMAIL Production
+SMTP_HOST = smtp.gmail.com
+SMTP_PORT = 465
+SMTP_USERNAME = youremail@gmail.com
+SMTP_PASSWORD = your app password
+SMTP_SECURE = true
+
+SESSION_SECRET = anything
+
+
+GOOGLE_CLIENT_ID = your client id from google cloud
+GOOGLE_CLIENT_SECRET = your client secret from google cloud
+GOOGLE_CALLBACK_URL = {Input your BE_HOST}/googleOAuth/login
+
+GCLOUD_PROJECT_ID = project-id
+GCLOUD_STORAGE_BUCKET_NAME = storage bucket name
+GCLOUD_STORAGE_AVATAR_FOLDER = avatar
+GCLOUD_STORAGE_KTP_FOLDER = ktp
+GCLOUD_STORAGE_KEY_FILE = path to your key file
