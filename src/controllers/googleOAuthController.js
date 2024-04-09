@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { JWT_SECRET } = process.env;
+const { JWT_SECRET, FE_HOST } = process.env;
 const passport = require('../configs/passport');
 const jwt = require('jsonwebtoken');
 const { Users } = require('../../db/models');
@@ -67,11 +67,9 @@ module.exports = {
     
             console.log(isCreated);
             const token = generateAuthToken(user);
-    
-            return res.json({
-                message: 'Login success',
-                token,
-            });
+
+            return res.redirect(`${FE_HOST}/auth/signin/oauth?token=${token}`);
+
     
         } catch (error) {
             return handleError(res, error);
