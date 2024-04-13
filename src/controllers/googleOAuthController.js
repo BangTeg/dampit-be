@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { JWT_SECRET, FE_HOST } = process.env;
+const { JWT_SECRET, JWT_EXPIRY, FE_HOST } = process.env;
 const passport = require('../configs/passport');
 const jwt = require('jsonwebtoken');
 const { Users } = require('../../db/models');
@@ -8,9 +8,9 @@ const { handleError } = require('../middlewares/errorHandler');
 
 // Function to generate JWT token
 const generateAuthToken = (user) => {
-    const { firstName, lastName, email, avatar, role, isVerified } = user;
-    return jwt.sign({ firstName, lastName, email, avatar, role, isVerified }, JWT_SECRET, {
-        expiresIn: "1d",
+    const { id, firstName, lastName, email, role } = user;
+    return jwt.sign({ id, firstName, lastName, email, role }, JWT_SECRET, {
+        expiresIn: JWT_EXPIRY,
     });
 };
 
