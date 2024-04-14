@@ -229,6 +229,14 @@ module.exports = {
             // Fetch vehicle data
             const vehicle = await Vehicles.findByPk(vehicleId, { attributes: ["id", "name", "price", "capacity", "overtime"] });
 
+            // If no vehicle data is found, return an error
+            if (!vehicle) {
+                return handleError(res, {
+                    status: 404,
+                    message: "Vehicle not found.",
+                });
+            }
+
             // Calculate total price based on vehicle price, unit, and rental duration (in days)
             const rentalDuration = Math.ceil((dropDateObj - pickDateObj) / (1000 * 60 * 60 * 24));
             const totalPrice = vehicle.price * unit * rentalDuration;
@@ -238,6 +246,14 @@ module.exports = {
 
             // Fetch user data
             const user = await Users.findByPk(userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role"] });
+
+            // If no user data is found, return an error
+            if (!user) {
+                return handleError(res, {
+                    status: 404,
+                    message: "User not found.",
+                });
+            }
 
             // Fetch admin users
             const adminUsers = await Users.findAll({ where: { role: 'admin' }, attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address"] });
