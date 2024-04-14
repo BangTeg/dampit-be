@@ -37,31 +37,37 @@
             margin-top: 20px;
             text-align: center;
         }
+        .whatsapp-link {
+            color: #25D366;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://bangteg.github.io/images/dampit-trans-logo.png" alt="dampit-trans-logo" class="logo">
+            <img src="https://bangteg.github.io/images/dampit-trans-logo.png" alt="Dampit Trans Logo" class="logo">
             <h2>New Reservation</h2>
         </div>
         <div class="content">
             <p>Hello Admin,</p>
-            <p>A new reservation has been made. Here are the details:</p>
+            <p>A new reservation has been made by <strong><%= user.firstName %></strong>. Here are the details:</p>
             <div class="reservation-details">
                 <p><strong>Reservation ID:</strong> <%= reservation.id %></p>
                 <p><strong>User:</strong> <%= user.firstName %> <%= user.lastName %></p>
                 <p><strong>Vehicle:</strong> <%= vehicle.name %></p>
+                <p><strong>Units of Vehicles:</strong> <%= reservation.units %> unit(s)</p>
                 <p><strong>Pick-up Location:</strong> <%= reservation.pickUp %></p>
                 <p><strong>Drop-off Location:</strong> <%= reservation.dropOff %></p>
                 <p><strong>Pick-up Date:</strong> <%= reservation.pickDate %></p>
                 <p><strong>Drop-off Date:</strong> <%= reservation.dropDate %></p>
-                <p><strong>Customer Contact:</strong> <%= user.contact %></p>
+                <p><strong>Customer Contact:</strong> <a href="https://wa.me/<%= user.contact %>" class="whatsapp-link"><%= user.contact %></a></p>
             </div>
-            <p>Please make sure to check the details in the admin dashboard soon to make the arrangement with the customer, and change the reservation status after.</p>
+            <p>Please validate the customer's data and contact them via WhatsApp before changing the reservation status.</p>
         </div>
         <div class="footer">
-            <p>Thank you!</p>
+            <p>Thank you,</p>
+            <p>Dampit Trans - Automated Messaging System</p>
         </div>
     </div>
 </body>

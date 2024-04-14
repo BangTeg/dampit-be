@@ -24,6 +24,7 @@
 
         h2 {
             color: #e74c3c;
+            text-align: center;
         }
 
         p {
@@ -40,7 +41,7 @@
 
 <body>
     <div class="container">
-        <h2>Reservation Status Update</h2>
+        <h2>Reservation Status Update: REJECTED</h2>
         <p>Hello <%= user.firstName %> <%= user.lastName %>,</p>
         <p>We regret to inform you that your reservation with the following details has been <strong>REJECTED</strong>:</p>
 
@@ -56,7 +57,8 @@
             <li><strong>Passenger:</strong> <%= reservation.passengers %></li>
         </ul>
 
-        <p>If you have any questions or concerns regarding the rejection, please contact our support team.</p>
+        <p>We noticed some issues with your reservation. Please review your information and make necessary corrections. Once done, please contact our support team for further assistance.</p>
+        <p>If you believe your reservation is valid and accurate, please contact us immediately for further validation.</p>
 
         <div class="footer">
             <p>We appreciate your understanding.</p>

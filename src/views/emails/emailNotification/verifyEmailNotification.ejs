@@ -5,68 +5,35 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dampit Trans - Email Verification</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    .header {
-      background-color: #007bff;
-      color: #fff;
-      padding: 20px;
-      text-align: center;
-      border-top-left-radius: 10px;
-      border-top-right-radius: 10px;
-    }
-    .content {
-      padding: 20px;
-      text-align: center;
-    }
-    .logo {
-      max-width: 100px;
-      height: auto;
-      margin-bottom: 20px;
-    }
-    .verify-button {
-      background-color: #007bff;
-      color: #ffffff;
-      padding: 10px 20px;
-      text-decoration: none;
-      border-radius: 5px;
-      display: inline-block;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 20px;
-    }
-  </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Email Verification</h1>
-    </div>
-    <div class="content">
-      <img src="https://bangteg.github.io/images/dampit-trans-logo.png" alt="Dampit Trans Logo" class="logo">
-      <p>Dear <strong><%= firstName %></strong>,</p>
-      <p>Welcome to Dampit Trans Solo! To activate your account, please click the button below to verify your email:</p>
-      <a href="<%= path %>/<%= token %>?email=<%= email %>" target="_blank" class="verify-button">Verify Email</a>
-      <p>If you have any questions or require assistance, please don't hesitate to contact our support team.</p>
-    </div>
-    <div class="footer">
-      <p>Sincerely,</p>
-      <p><b>Dampit Trans Solo</b></p>
-    </div>
-  </div>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+      <td align="center" style="padding: 20px;">
+        <table role="presentation" width="600px" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+          <tr>
+            <td align="center" style="background-color: #007bff; color: #fff; padding: 20px; border-top-left-radius: 10px; border-top-right-radius: 10px;">
+              <h1>Email Verification</h1>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 20px;">
+              <img src="https://bangteg.github.io/images/dampit-trans-logo.png" alt="Dampit Trans Logo" width="100" style="margin-bottom: 20px;">
+              <p>Dear <strong><%= firstName %></strong>,</p>
+              <p>Welcome to Dampit Trans Solo! To activate your account, please click the button below to verify your email:</p>
+              <a href="<%= path %>/<%= token %>?email=<%= email %>" target="_blank" style="background-color: rgb(62, 156, 255); border: none; color: #ffffff; font-size: 16px; font-weight: bold; cursor: pointer; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Email</a>
+              <p>If you have any questions or require assistance, please don't hesitate to contact our support team.</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 20px;">
+              <p>Sincerely,</p>
+              <p><b>Dampit Trans Solo</b></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

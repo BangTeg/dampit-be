@@ -24,6 +24,7 @@
 
         h2 {
             color: #3498db;
+            text-align: center;
         }
 
         p {
@@ -40,7 +41,7 @@
 
 <body>
     <div class="container">
-        <h2>Reservation Status Update</h2>
+        <h2>Reservation Status Update: FINISHED</h2>
         <p>Hello <%= user.firstName %> <%= user.lastName %>,</p>
         <p>Your reservation with the following details has been marked as <strong>FINISHED</strong>:</p>
 
@@ -55,11 +56,12 @@
             <li><strong>Unit(s):</strong> <%= reservation.unit %> Car(s)</li>
             <li><strong>Overtime (Hours):</strong> <%= reservation.overtimeHour %></li>
             <li><strong>Total Price:</strong> Rp.<%= reservation.totalPriceAfterOvertime %>,00- </li>
-            <li><strong>Finished Date: <%= reservation.finishedAt %></strong></li>
+            <li><strong>Finished Date:</strong> <%= reservation.finishedAt %></li>
         </ul>
 
         <p>We hope you had a pleasant experience with our service. If you have any feedback or inquiries, please
             contact us.</p>
+        <p>Please note that your feedback is valuable to us and will help us improve our services in the future.</p>
 
         <div class="footer">
             <p>Thank you for choosing our service!</p>

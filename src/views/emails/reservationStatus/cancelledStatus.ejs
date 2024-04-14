@@ -24,6 +24,7 @@
 
         h2 {
             color: #e74c3c;
+            text-align: center;
         }
 
         p {
@@ -40,12 +41,16 @@
 
 <body>
     <div class="container">
-        <h2>Reservation Status Update</h2>
-        <p>Hello <%= user.firstName %> <%= user.lastName %>,</p>
-        <p>We regret to inform you that your reservation with the following details has been <strong>CANCELLED</strong>:</p>
+        <h2>Reservation Status Update: CANCELLED</h2>
+        <p>Hello Admin,</p>
+        <p>A reservation with the following details has been <strong>CANCELLED</strong> by the user: <%= user.email %></p>
+        <p>The reservation was made on <%= reservation.createdAt %>.</p>
 
         <ul>
             <li><strong>Reservation ID:</strong> <%= reservation.id %></li>
+            <li><strong>Name:</strong>  <%= user.firstName %> <%= user.lastName %></li>
+            <li><strong>Email:</strong>  <% %= user.email %></li>
+            <li><strong>Phone:</strong>  <%= user.phone %></li>
             <li><strong>Pick-Up Date:</strong> <%= reservation.pickDate %></li>
             <li><strong>Drop-Off Date:</strong> <%= reservation.dropDate %></li>
             <li><strong>Pick-Up Location:</strong> <%= reservation.pickUp %></li>
@@ -56,10 +61,11 @@
             <li><strong>Passenger:</strong> <%= reservation.passengers %></li>
         </ul>
 
-        <p>If you have any questions or concerns regarding the cancellation, please contact our support team.</p>
+        <p>If you have any questions or need further information, please contact the user.</p>
+        <p>Thank you.</p>
 
         <div class="footer">
-            <p>We appreciate your understanding.</p>
+            <p>This email is sent to notify you of the cancellation. If you have any concerns, please contact the user directly.</p>
             <img src="https://bangteg.github.io/images/dampit-trans-logo.png" alt="Company Logo" style="max-width: 100px;">
         </div>
     </div>
