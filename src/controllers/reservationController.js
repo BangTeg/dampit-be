@@ -40,31 +40,23 @@ module.exports = {
     includeVehicle,
     attributes,
 
-    getAll: crudController.getAll(Reservations, {
-        include,
-        attributes,
-        paginated: true,
-        f: async (req, res, rows) => {
-            const { page, limit } = req.query;
-            const pendingReservations = rows.filter(row => row.status === "pending");
-            const otherReservations = rows.filter(row => row.status !== "pending");
-            
-            const totalRows = await Reservations.count();
-            const mergedReservations = [...pendingReservations, ...otherReservations];
-            const totalPages = Math.ceil(totalRows / limit);
-    
-            // Remove the extra data if the response exceeds the limit
-            if (mergedReservations.length > limit) {
-                mergedReservations.pop();
-            }
-    
-            return {
-                rows: mergedReservations,
-                totalRows,
-                totalPages,
-            };
+    getAll: async (req, res) => {
+        const { status } = req.query;
+        if (status && !['pending', 'approved', 'rejected', 'finished', 'cancelled'].includes(status)) {
+            return handleError(res, {
+                status: 400,
+                message: "Please provide a valid 'status' query parameter.",
+            });
         }
-    }),
+        const where = status ? { status } : {};
+
+        return await crudController.getAll(Reservations, {
+            where,
+            include,
+            attributes,
+            paginated: true,
+        })(req, res);
+    },
 
     // Get Reservation data by ID
     getById: crudController.getById(Reservations, { include }),
@@ -81,8 +73,18 @@ module.exports = {
     
     getReservationsByUserToken: async (req, res) => {
         const { id } = req.user;
+        const { status } = req.query;
+
+        if (status && !['pending', 'approved', 'rejected', 'finished', 'cancelled'].includes(status)) {
+            return handleError(res, {
+                status: 400,
+                message: "Please provide a valid 'status' query parameter.",
+            });
+        }
+        const where = status ? { userId: id, status } : { userId: id };
+
         return await crudController.getAll(Reservations, {
-            where: { userId: id },
+            where,
             include,
             attributes,
             paginated: true,
@@ -166,24 +168,24 @@ module.exports = {
         })(req, res);
     },
 
-    getByReservationStatus: async (req, res) => {
-        const { status } = req.params;
+    // getByReservationStatus: async (req, res) => {
+    //     const { status } = req.params;
 
-        // Validate status parameter
-        if (!status || !['pending', 'approved', 'rejected', 'finished', 'cancelled'].includes(status)) {
-            return handleError(res, {
-                status: 400,
-                message: "Please provide a valid 'status' parameter.",
-            });
-        }
+    //     // Validate status parameter
+    //     if (!status || !['pending', 'approved', 'rejected', 'finished', 'cancelled'].includes(status)) {
+    //         return handleError(res, {
+    //             status: 400,
+    //             message: "Please provide a valid 'status' parameter.",
+    //         });
+    //     }
 
-        return await crudController.getAll(Reservations, {
-            where: { status },
-            include,
-            attributes,
-            paginated: true,
-        })(req, res);
-    },
+    //     return await crudController.getAll(Reservations, {
+    //         where: { status },
+    //         include,
+    //         attributes,
+    //         paginated: true,
+    //     })(req, res);
+    // },
 
     create: async (req, res) => {
         try {
