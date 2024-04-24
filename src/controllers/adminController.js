@@ -53,10 +53,14 @@ module.exports = {
                     status: 400,
                     message: "Please provide 'year' parameters.",
                 });
-            } else {
+            } else if (!month && year) {
                 // If month is not provided, consider the entire year
                 startDate = new Date(`${year}-01-01`);
                 endDate = new Date(`${year}-12-31T23:59:59`);
+            } else {
+                // If both month and year are not provided, consider all time
+                startDate = null;
+                endDate = null;
             }
 
             // Prepare the where clause for the query
@@ -73,6 +77,8 @@ module.exports = {
             let totalRevenue;
 
             if (month && year) {
+                totalRevenue = await Reservations.sum('totalPriceAfterOvertime', { where: whereClause });
+            } else if (!month && year) {
                 totalRevenue = await Reservations.sum('totalPriceAfterOvertime', { where: whereClause });
             } else {
                 totalRevenue = await Reservations.sum('totalPriceAfterOvertime', { where: { status: 'finished' } });
@@ -93,7 +99,7 @@ module.exports = {
                 status: 'OK',
                 message: 'Success getting total revenue from finished reservations.',
                 data: {
-                    totalRevenue: totalRevenue,
+                    totalRevenue: totalRevenue || 0,
                     details: {
                         totalFinishedReservations: totalFinishedReservations || 0,
                         startDate: startDate || 'All time',
