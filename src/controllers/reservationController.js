@@ -210,7 +210,7 @@ module.exports = {
             }
 
             // Fetch user data
-            const user = await Users.findByPk(userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role"] });
+            const user = await Users.findByPk(userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role", "ktp"] });
 
             // If no user data is found, return an error
             if (!user) {
@@ -220,8 +220,16 @@ module.exports = {
                 });
             }
 
+            // If user role is 'admin', return an error (only 'user' role can create reservations)
+            if (user.role === 'admin') {
+                return handleError(res, {
+                    status: 403,
+                    message: "Admin users cannot create reservations.",
+                });
+            }
+
             // Check if user has filled all attributes
-            const requiredAttributes = ['firstName', 'lastName', 'email', 'contact', 'address'];
+            const requiredAttributes = ['firstName', 'lastName', 'email', 'contact', 'address', 'ktp'];
             if (requiredAttributes.some(attr => !user[attr])) {
                 return handleError(res, {
                     status: 400,
