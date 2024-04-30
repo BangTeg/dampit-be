@@ -168,25 +168,6 @@ module.exports = {
         })(req, res);
     },
 
-    // getByReservationStatus: async (req, res) => {
-    //     const { status } = req.params;
-
-    //     // Validate status parameter
-    //     if (!status || !['pending', 'approved', 'rejected', 'finished', 'cancelled'].includes(status)) {
-    //         return handleError(res, {
-    //             status: 400,
-    //             message: "Please provide a valid 'status' parameter.",
-    //         });
-    //     }
-
-    //     return await crudController.getAll(Reservations, {
-    //         where: { status },
-    //         include,
-    //         attributes,
-    //         paginated: true,
-    //     })(req, res);
-    // },
-
     create: async (req, res) => {
         try {
             const { vehicleId, pickUp, dropOff, passengers, institution, unit, pickDate, dropDate } = req.body;
@@ -228,6 +209,26 @@ module.exports = {
                 });
             }
 
+            // Fetch user data
+            const user = await Users.findByPk(userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role"] });
+
+            // If no user data is found, return an error
+            if (!user) {
+                return handleError(res, {
+                    status: 404,
+                    message: "User not found.",
+                });
+            }
+
+            // Check if user has filled all attributes
+            const requiredAttributes = ['firstName', 'lastName', 'email', 'contact', 'address'];
+            if (requiredAttributes.some(attr => !user[attr])) {
+                return handleError(res, {
+                    status: 400,
+                    message: `Please complete all user attributes: '${requiredAttributes.join("', '")}'.`,
+                });
+            }
+
             // Fetch vehicle data
             const vehicle = await Vehicles.findByPk(vehicleId, { attributes: ["id", "name", "price", "capacity", "overtime"] });
 
@@ -245,17 +246,6 @@ module.exports = {
 
             // Create reservation data
             const reservation = await Reservations.create({ userId, vehicleId, pickUp, dropOff, passengers, institution, unit, pickDate, dropDate, totalPrice, isOvertime: 0, totalPriceAfterOvertime: 0 });
-
-            // Fetch user data
-            const user = await Users.findByPk(userId, { attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address", "role"] });
-
-            // If no user data is found, return an error
-            if (!user) {
-                return handleError(res, {
-                    status: 404,
-                    message: "User not found.",
-                });
-            }
 
             // Fetch admin users
             const adminUsers = await Users.findAll({ where: { role: 'admin' }, attributes: ["id", "username", "firstName", "lastName", "email", "contact", "address"] });

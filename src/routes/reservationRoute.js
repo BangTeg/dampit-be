@@ -21,9 +21,6 @@ router.get("/filter/date", adminToken, reservationController.getReservationsByDa
 // Route to get reservations by vehicle ID
 router.get("/vehicle/:id", adminToken, reservationController.getByVehicleId);
 
-// // Route to get all reservations by status
-// router.get("/show/:status", adminToken, reservationController.getByReservationStatus);
-
 // Route to create a new reservation
 router.post("/", reservationController.create);
 
