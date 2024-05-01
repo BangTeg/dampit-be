@@ -233,7 +233,7 @@ module.exports = {
             if (requiredAttributes.some(attr => !user[attr])) {
                 return handleError(res, {
                     status: 400,
-                    message: `Please complete all user attributes: '${requiredAttributes.join("', '")}'.`,
+                    message: `Please complete all of your profile information before make any reservations.`,
                 });
             }
 
